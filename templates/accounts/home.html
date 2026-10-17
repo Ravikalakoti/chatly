@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Home · Chatly{% endblock %}
+{% block body_class %}home-page{% endblock %}
+
+{% block content %}
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-logo">💬</span>
+    <span class="brand-name">Chatly</span>
+  </div>
+  <div class="topbar-right">
+    <div class="avatar av-{{ request.user.avatar_index }}" title="{{ request.user.name }}">{{ request.user.initial }}</div>
+    <form method="post" action="{% url 'logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-ghost">Log out</button>
+    </form>
+  </div>
+</header>
+
+<main class="home">
+  <h1>Hi {{ request.user.name }} 👋</h1>
+  <p class="lead">Chat with anyone who joins through your personal invite link.</p>
+
+  <section class="card">
+    <h2>Invite a friend</h2>
+    <p class="muted">Copy your link and send it by message, email or SMS. When they open it they can create an account (or log in) and you'll be connected instantly.</p>
+
+    <div class="copy-row">
+      <input id="invite-link" class="input" type="text" readonly value="{{ invite_url }}" aria-label="Your invite link">
+      <button id="copy-btn" class="btn btn-primary" type="button">Copy link</button>
+    </div>
+    <button id="share-btn" class="btn btn-ghost share-btn" type="button" hidden>Share…</button>
+  </section>
+
+  <a class="btn btn-primary btn-lg" href="{% url 'dashboard' %}">Open my chats →</a>
+</main>
+{% endblock %}
+
+{% block extra_js %}<script src="{% static 'js/home.js' %}"></script>{% endblock %}
