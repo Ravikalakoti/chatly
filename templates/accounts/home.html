@@ -1,40 +1,407 @@
+
 {% extends "base.html" %}
 {% load static %}
+
 {% block title %}Home · Chatly{% endblock %}
 {% block body_class %}home-page{% endblock %}
 
 {% block content %}
+
+<style>
+.home-page {
+    min-height: 100vh;
+    background: linear-gradient(-45deg, #ede9fe, #fce7f3, #e0f2fe, #f5f3ff);
+    background-size: 400% 400%;
+    animation: backgroundMove 12s ease infinite;
+    font-family: Arial, sans-serif;
+}
+
+/* Header */
+.home-page .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 7%;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid #ddd6fe;
+    box-shadow: 0 5px 25px #6d28d90d;
+    animation: slideDown 0.7s ease;
+}
+
+.home-page .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.home-page .brand-logo {
+    width: 46px;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    font-size: 24px;
+    box-shadow: 0 6px 18px #8b5cf644;
+    animation: floatLogo 3s ease-in-out infinite;
+}
+
+.home-page .brand-name {
+    color: #6d28d9;
+    font-size: 25px;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+}
+
+.home-page .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.home-page .topbar-right form {
+    margin: 0;
+}
+
+/* Avatar */
+.home-page .avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    color: white;
+    font-weight: bold;
+    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+    box-shadow: 0 4px 14px #8b5cf644;
+    transition: transform 0.3s ease;
+}
+
+.home-page .avatar:hover {
+    transform: scale(1.1) rotate(5deg);
+}
+
+/* Main content */
+.home-page .home {
+    width: min(88%, 760px);
+    margin: 65px auto;
+    animation: fadeUp 0.8s ease both;
+}
+
+.home-page .home h1 {
+    color: #312e81;
+    font-size: clamp(28px, 5vw, 42px);
+    letter-spacing: -1px;
+    margin-bottom: 12px;
+}
+
+.home-page .lead {
+    color: #64748b;
+    font-size: 16px;
+    line-height: 1.8;
+    margin-bottom: 32px;
+}
+
+/* Invite card */
+.home-page .card {
+    position: relative;
+    overflow: hidden;
+    padding: 30px;
+    margin-bottom: 28px;
+    border: 1px solid #ddd6fe;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    box-shadow: 0 15px 45px #5b21b60f;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    animation: fadeUp 1s ease both;
+}
+
+.home-page .card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 70%;
+    height: 4px;
+    background: linear-gradient(90deg, #8b5cf6, #ec4899, #06b6d4);
+    animation: shine 4s ease-in-out infinite;
+}
+
+.home-page .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 22px 50px #7c3aed20;
+}
+
+.home-page .card h2 {
+    color: #6d28d9;
+    font-size: 24px;
+    margin-top: 0;
+    margin-bottom: 12px;
+}
+
+.home-page .muted {
+    color: #64748b;
+    line-height: 1.8;
+    font-size: 14px;
+}
+
+/* Invite link */
+.home-page .copy-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.home-page #invite-link {
+    flex: 1;
+    min-width: 0;
+    padding: 14px 15px;
+    border: 1px solid #ddd6fe;
+    border-radius: 12px;
+    background: #faf9ff;
+    color: #5b21b6;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+.home-page #invite-link:focus {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 4px #8b5cf61c;
+}
+
+/* Buttons */
+.home-page .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 12px 19px;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 0.25s ease, box-shadow 0.25s ease,
+                background 0.25s ease;
+}
+
+.home-page .btn-primary {
+    color: #fff;
+    background: linear-gradient(135deg, #7c3aed, #a855f7, #ec4899);
+    background-size: 200% 200%;
+    box-shadow: 0 6px 18px #8b5cf633;
+}
+
+.home-page .btn-primary:hover {
+    background-position: right center;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px #8b5cf64d;
+}
+
+.home-page .btn-ghost {
+    color: #6d28d9;
+    background: #fff;
+    border: 1px solid #ddd6fe;
+}
+
+.home-page .btn-ghost:hover {
+    background: #ede9fe;
+    transform: translateY(-2px);
+}
+
+.home-page .share-btn {
+    margin-top: 12px;
+}
+
+.home-page .btn-lg {
+    padding: 15px 24px;
+    font-size: 16px;
+    animation: fadeUp 1.2s ease both;
+}
+
+.home-page .btn-lg:hover {
+    transform: translateY(-3px) scale(1.02);
+}
+
+/* Animations */
+@keyframes backgroundMove {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-18px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(22px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes floatLogo {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+@keyframes shine {
+    0% { left: -100%; }
+    50%, 100% { left: 130%; }
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+    .home-page .topbar {
+        padding: 12px 5%;
+    }
+
+    .home-page .brand-name {
+        font-size: 21px;
+    }
+
+    .home-page .brand-logo {
+        width: 40px;
+        height: 40px;
+    }
+
+    .home-page .topbar-right {
+        gap: 8px;
+    }
+
+    .home-page .topbar-right .btn {
+        padding: 10px 12px;
+    }
+
+    .home-page .home {
+        width: 90%;
+        margin: 38px auto;
+    }
+
+    .home-page .card {
+        padding: 23px 17px;
+        border-radius: 19px;
+    }
+
+    .home-page .copy-row {
+        flex-direction: column;
+    }
+
+    .home-page .copy-row .btn {
+        width: 100%;
+    }
+
+    .home-page .btn-lg {
+        display: flex;
+        width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .home-page *,
+    .home-page *::before,
+    .home-page *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+</style>
+
 <header class="topbar">
-  <div class="brand">
-    <span class="brand-logo">💬</span>
-    <span class="brand-name">Chatly</span>
-  </div>
-  <div class="topbar-right">
-    <div class="avatar av-{{ request.user.avatar_index }}" title="{{ request.user.name }}">{{ request.user.initial }}</div>
-    <form method="post" action="{% url 'logout' %}">
-      {% csrf_token %}
-      <button type="submit" class="btn btn-ghost">Log out</button>
-    </form>
-  </div>
+    <div class="brand">
+        <span class="brand-logo">💬</span>
+        <span class="brand-name">Chatly</span>
+    </div>
+
+    <div class="topbar-right">
+        <div
+            class="avatar av-{{ request.user.avatar_index }}"
+            title="{{ request.user.name }}"
+        >
+            {{ request.user.initial }}
+        </div>
+
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-ghost">
+                Log out
+            </button>
+        </form>
+    </div>
 </header>
 
 <main class="home">
-  <h1>Hi {{ request.user.name }} 👋</h1>
-  <p class="lead">Chat with anyone who joins through your personal invite link.</p>
+    <h1>Hi {{ request.user.name }} 👋</h1>
 
-  <section class="card">
-    <h2>Invite a friend</h2>
-    <p class="muted">Copy your link and send it by message, email or SMS. When they open it they can create an account (or log in) and you'll be connected instantly.</p>
+    <p class="lead">
+        Your people, your conversations. Start connecting with Chatly 💜
+    </p>
 
-    <div class="copy-row">
-      <input id="invite-link" class="input" type="text" readonly value="{{ invite_url }}" aria-label="Your invite link">
-      <button id="copy-btn" class="btn btn-primary" type="button">Copy link</button>
-    </div>
-    <button id="share-btn" class="btn btn-ghost share-btn" type="button" hidden>Share…</button>
-  </section>
+    <section class="card">
+        <h2>✨ Invite a friend</h2>
 
-  <a class="btn btn-primary btn-lg" href="{% url 'dashboard' %}">Open my chats →</a>
+        <p class="muted">
+            Share your personal invite link through a message, email or SMS.
+            When your friend joins Chatly, you can start connecting instantly.
+        </p>
+
+        <div class="copy-row">
+            <input
+                id="invite-link"
+                class="input"
+                type="text"
+                readonly
+                value="{{ invite_url }}"
+                aria-label="Your invite link"
+            >
+
+            <button id="copy-btn" class="btn btn-primary" type="button">
+                Copy link
+            </button>
+        </div>
+
+        <button
+            id="share-btn"
+            class="btn btn-ghost share-btn"
+            type="button"
+            hidden
+        >
+            Share…
+        </button>
+    </section>
+
+    <a class="btn btn-primary btn-lg" href="{% url 'dashboard' %}">
+        Open my chats →
+    </a>
 </main>
+
 {% endblock %}
 
-{% block extra_js %}<script src="{% static 'js/home.js' %}"></script>{% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/home.js' %}"></script>
+{% endblock %}
