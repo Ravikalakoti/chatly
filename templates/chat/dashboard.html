@@ -7,13 +7,13 @@
 {% block content %}
 <style>
   .chat-page {
-    --chat-primary: #7657e8;
-    --chat-primary-dark: #6042d0;
-    --chat-pink: #e879b9;
-    --chat-text: #292541;
-    --chat-muted: #918da5;
-    --chat-border: #eeeaf7;
-    background: #f7f5ff;
+    --chat-primary: #ef5075;
+    --chat-primary-dark: #d83a5f;
+    --chat-pink: #ee73a1;
+    --chat-text: #44222a;
+    --chat-muted: #aa8890;
+    --chat-border: #f8e9ed;
+    background: #fff5f7;
     color: var(--chat-text);
   }
 
@@ -26,10 +26,10 @@
     min-height: 520px;
     margin: 18px auto;
     overflow: hidden;
-    background: rgba(255,255,255,.94);
-    border: 1px solid rgba(255,255,255,.9);
+    background: rgba(255, 255, 255, .94);
+    border: 1px solid rgba(255, 255, 255, .9);
     border-radius: 25px;
-    box-shadow: 0 18px 65px rgba(76, 55, 145, .12);
+    box-shadow: 0 18px 65px rgba(151, 49, 73, .12);
     animation: chatAppear .5s ease both;
   }
 
@@ -38,7 +38,7 @@
     flex-direction: column;
     flex: 0 0 340px;
     min-width: 0;
-    background: #fff;
+    background: #ffffff;
     border-right: 1px solid var(--chat-border);
   }
 
@@ -47,7 +47,7 @@
     align-items: center;
     gap: 12px;
     padding: 23px 20px 18px;
-    border-bottom: 1px solid #f4f0fa;
+    border-bottom: 1px solid #fbeff2;
   }
 
   .chat-page .avatar {
@@ -63,8 +63,8 @@
     font-size: 16px;
     font-weight: 750;
     text-decoration: none;
-    background: linear-gradient(135deg, #9478ff, #e879b9);
-    box-shadow: 0 5px 14px rgba(118, 87, 232, .19);
+    background: linear-gradient(135deg, #ff7898, #ee73a1);
+    box-shadow: 0 5px 14px rgba(239, 80, 117, .19);
   }
 
   .chat-page .sidebar-title {
@@ -91,8 +91,8 @@
     padding: 0;
     border: 0;
     border-radius: 13px;
-    color: #7463a9;
-    background: #f5f1ff;
+    color: #b05c70;
+    background: #fff1f4;
     cursor: pointer;
     text-decoration: none;
     transition: transform .2s ease, background .2s ease, color .2s ease;
@@ -100,7 +100,7 @@
 
   .chat-page .icon-btn:hover {
     transform: translateY(-2px);
-    color: #fff;
+    color: #ffffff;
     background: var(--chat-primary);
   }
 
@@ -111,9 +111,9 @@
     height: 45px;
     padding: 0 16px;
     outline: none;
-    border: 1px solid #eee9f8;
+    border: 1px solid #f9e8ec;
     border-radius: 14px;
-    background: #f8f6fc;
+    background: #fcf6f7;
     color: var(--chat-text);
     font: inherit;
     font-size: 13px;
@@ -121,9 +121,9 @@
   }
 
   .chat-page .search-input:focus {
-    border-color: #a997f7;
+    border-color: #fc92ab;
     background: white;
-    box-shadow: 0 0 0 4px rgba(118, 87, 232, .09);
+    box-shadow: 0 0 0 4px rgba(239, 80, 117, .09);
   }
 
   .chat-page .conv-list {
@@ -131,16 +131,16 @@
     overflow-y: auto;
     padding: 4px 10px 15px;
     scrollbar-width: thin;
-    scrollbar-color: #ddd3fa transparent;
+    scrollbar-color: #fcd1db transparent;
   }
 
   .chat-page .list-empty {
     padding: 22px;
     margin: 8px 16px 20px;
-    border: 1px dashed #d9cdfa;
+    border: 1px dashed #fccbd6;
     border-radius: 18px;
     text-align: center;
-    background: linear-gradient(145deg, #faf8ff, #fff7fc);
+    background: linear-gradient(145deg, #fff8fa, #fff7fa);
     animation: chatAppear .35s ease both;
   }
 
@@ -165,7 +165,7 @@
     border-radius: 13px;
     color: white;
     background: linear-gradient(120deg, var(--chat-primary), var(--chat-pink));
-    box-shadow: 0 6px 18px rgba(118, 87, 232, .2);
+    box-shadow: 0 6px 18px rgba(239, 80, 117, .2);
     font-size: 13px;
     font-weight: 700;
     text-decoration: none;
@@ -174,7 +174,7 @@
 
   .chat-page .btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 9px 22px rgba(118, 87, 232, .28);
+    box-shadow: 0 9px 22px rgba(239, 80, 117, .28);
   }
 
   .chat-page .main {
@@ -185,9 +185,9 @@
     min-width: 0;
     overflow: hidden;
     background:
-      radial-gradient(ellipse at 85% 8%, rgba(226, 204, 255, .22), transparent 35%),
-      radial-gradient(ellipse at 8% 95%, rgba(255, 219, 239, .25), transparent 32%),
-      #fbfaff;
+      radial-gradient(ellipse at 85% 8%, rgba(255, 204, 216, .22), transparent 35%),
+      radial-gradient(ellipse at 8% 95%, rgba(255, 219, 232, .25), transparent 32%),
+      #fffafb;
   }
 
   .chat-page .chat-header {
@@ -197,8 +197,8 @@
     gap: 13px;
     min-height: 84px;
     padding: 15px 25px;
-    border-bottom: 1px solid #eeeaf6;
-    background: rgba(255,255,255,.88);
+    border-bottom: 1px solid #f7e9ec;
+    background: rgba(255, 255, 255, .88);
     backdrop-filter: blur(14px);
   }
 
@@ -218,7 +218,7 @@
 
   .chat-page .chat-status {
     margin-top: 4px;
-    color: #20a878;
+    color: #af193c;
     font-size: 12px;
   }
 
@@ -228,7 +228,7 @@
     height: 7px;
     margin-right: 6px;
     border-radius: 50%;
-    background: #29c58b;
+    background: #ce2049;
     content: "";
     animation: statusPulse 1.5s infinite;
   }
@@ -237,8 +237,8 @@
 
   .chat-page .conn-banner {
     padding: 9px 15px;
-    color: #7657e8;
-    background: #f0ebff;
+    color: #ef5075;
+    background: #ffebf0;
     text-align: center;
     font-size: 12px;
   }
@@ -253,31 +253,31 @@
     padding: 24px clamp(16px, 4vw, 48px);
     scroll-behavior: smooth;
     scrollbar-width: thin;
-    scrollbar-color: #dcd2f8 transparent;
+    scrollbar-color: #fad0da transparent;
   }
 
   .chat-page .load-more {
     align-self: center;
     padding: 9px 15px;
     margin: 0 0 15px;
-    border: 1px solid #e5dcff;
+    border: 1px solid #ffdce4;
     border-radius: 20px;
     color: var(--chat-primary);
-    background: #fff;
+    background: #ffffff;
     cursor: pointer;
     font-size: 12px;
     transition: background .2s;
   }
 
-  .chat-page .load-more:hover { background: #f2edff; }
+  .chat-page .load-more:hover { background: #ffedf1; }
 
   .chat-page .composer {
     display: flex;
     align-items: flex-end;
     gap: 12px;
     padding: 16px 22px 21px;
-    border-top: 1px solid #eeeaf6;
-    background: rgba(255,255,255,.9);
+    border-top: 1px solid #f7e9ec;
+    background: rgba(255, 255, 255, .9);
   }
 
   .chat-page #msg-input {
@@ -288,10 +288,10 @@
     padding: 14px 17px;
     resize: none;
     outline: none;
-    border: 1px solid #eae5f5;
+    border: 1px solid #f6e4e8;
     border-radius: 17px;
     color: var(--chat-text);
-    background: #f9f7fd;
+    background: #fdf7f8;
     font: inherit;
     font-size: 14px;
     line-height: 1.5;
@@ -299,9 +299,9 @@
   }
 
   .chat-page #msg-input:focus {
-    border-color: #a997f7;
-    background: #fff;
-    box-shadow: 0 0 0 4px rgba(118, 87, 232, .08);
+    border-color: #fc92ab;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(239, 80, 117, .08);
   }
 
   .chat-page .send-btn {
@@ -313,16 +313,16 @@
     height: 49px;
     border: 0;
     border-radius: 16px;
-    color: #fff;
-    background: linear-gradient(135deg, #8a6af3, #d96eb8);
-    box-shadow: 0 7px 17px rgba(118, 87, 232, .24);
+    color: #ffffff;
+    background: linear-gradient(135deg, #fa6386, #df6898);
+    box-shadow: 0 7px 17px rgba(239, 80, 117, .24);
     cursor: pointer;
     transition: transform .2s, box-shadow .2s;
   }
 
   .chat-page .send-btn:hover {
     transform: translateY(-2px) rotate(-3deg);
-    box-shadow: 0 10px 23px rgba(118, 87, 232, .32);
+    box-shadow: 0 10px 23px rgba(239, 80, 117, .32);
   }
 
   .chat-page .send-btn:active { transform: scale(.94); }
@@ -344,10 +344,10 @@
     height: 95px;
     place-items: center;
     margin-bottom: 22px;
-    border: 1px solid rgba(255,255,255,.8);
+    border: 1px solid rgba(255, 255, 255, .8);
     border-radius: 30px;
-    background: linear-gradient(145deg, #eee7ff, #ffe8f4);
-    box-shadow: 0 15px 35px rgba(118, 87, 232, .14);
+    background: linear-gradient(145deg, #ffe7ed, #ffe8f0);
+    box-shadow: 0 15px 35px rgba(239, 80, 117, .14);
     font-size: 43px;
     animation: gentleFloat 3s ease-in-out infinite;
   }
@@ -357,7 +357,7 @@
     font-size: clamp(25px, 3vw, 34px);
     font-weight: 850;
     letter-spacing: -1px;
-    background: linear-gradient(100deg, #7657e8, #d96eb8);
+    background: linear-gradient(100deg, #ef5075, #df6898);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -366,7 +366,7 @@
   .chat-page .placeholder p {
     max-width: 350px;
     margin: 12px 0 23px;
-    color: #89839d;
+    color: #a27e86;
     font-size: 14px;
     line-height: 1.8;
   }
@@ -434,7 +434,7 @@
   <aside class="sidebar">
     <header class="sidebar-header">
        <a href="{% url 'profile' %}" title="My profile">{% include "accounts/_avatar.html" with u=request.user %}</a>
-      <div class="sidebar-title">Chats</div>
+      <div class="sidebar-title">Chats 💗</div>
 
       <div class="sidebar-actions">
         <a class="icon-btn" href="{% url 'home' %}" title="Invite a friend" aria-label="Invite a friend">
@@ -470,7 +470,7 @@
           <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20z"/></svg>
         </a>
 
-        <a id="peer-link" class="peer-link" href="#" title="View profile">
+        <a id="peer-link" class="peer-link" href="{% if peer %}{% url 'profile_detail' peer.pk %}{% else %}#{% endif %}" title="View profile">
             <div id="peer-avatar" class="avatar"></div>
             <div class="chat-header-text">
                 <div id="peer-name" class="chat-name"></div>
@@ -487,16 +487,34 @@
       </div>
 
       <form id="composer" class="composer" autocomplete="off">
-        <textarea id="msg-input" rows="1" maxlength="4000" placeholder="Type a message" aria-label="Type a message"></textarea>
-        <button class="send-btn" type="submit" aria-label="Send">
+        <label class="icon-btn composer-tool" title="Send a photo" aria-label="Send a photo">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5z"/></svg>
+          <input id="photo-input" type="file" accept="image/*" hidden>
+        </label>
+        <textarea id="msg-input" rows="1" maxlength="4000" placeholder="Write something sweet…" aria-label="Type a message"></textarea>
+        <button id="send-btn" class="send-btn" type="submit" aria-label="Send" hidden>
           <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
         </button>
+        <button id="mic-btn" class="send-btn" type="button" aria-label="Record a voice message" title="Record a voice message">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11z"/></svg>
+        </button>
+
+        <div id="rec-bar" class="rec-bar" hidden>
+          <button id="rec-cancel" class="icon-btn" type="button" aria-label="Cancel recording" title="Cancel">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"/></svg>
+          </button>
+          <span class="rec-dot"></span><span id="rec-time" class="rec-time">0:00</span>
+          <span class="rec-hint">Recording…</span>
+          <button id="rec-send" class="send-btn" type="button" aria-label="Send voice message">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+          </button>
+        </div>
       </form>
 
     {% else %}
       <div class="placeholder">
-        <div class="placeholder-icon">💬</div>
-        <h2>Welcome to Chatly</h2>
+        <div class="placeholder-icon">💞</div>
+        <h2>Welcome to Chatly 💕</h2>
         <p>Select a chat from the left to start messaging, or invite a friend using your personal link.</p>
         <a class="btn btn-primary" href="{% url 'home' %}">Invite a friend</a>
         <div id="conn-banner" class="conn-banner" hidden>Connecting…</div>

@@ -3,12 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-  <meta name="theme-color" content="#008069">
+  <meta name="theme-color" content="#e8336d">
   <title>{% block title %}Chatly{% endblock %}</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%2300a884'/><path d='M25 70l5-15a26 26 0 1 1 10 10z' fill='white'/></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💖</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="stylesheet" href="{% static 'css/love.css' %}">
+  {% block extra_css %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
+  <div class="love-bg" aria-hidden="true"><span style="--x:6%;--d:0s;--s:18px;--w:16s">💗</span><span style="--x:16%;--d:5s;--s:26px;--w:21s">💕</span><span style="--x:27%;--d:2s;--s:16px;--w:18s">❤️</span><span style="--x:38%;--d:9s;--s:22px;--w:24s">💖</span><span style="--x:49%;--d:4s;--s:14px;--w:17s">💗</span><span style="--x:58%;--d:11s;--s:28px;--w:22s">💞</span><span style="--x:68%;--d:1s;--s:18px;--w:19s">❤️</span><span style="--x:77%;--d:7s;--s:24px;--w:25s">💕</span><span style="--x:86%;--d:3s;--s:16px;--w:16s">💖</span><span style="--x:94%;--d:10s;--s:20px;--w:20s">💗</span><span style="--x:22%;--d:13s;--s:14px;--w:23s">💞</span><span style="--x:72%;--d:14s;--s:22px;--w:18s">💓</span></div>
+
   {% if messages %}
   <div class="toasts" role="status">
     {% for message in messages %}

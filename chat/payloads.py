@@ -25,12 +25,19 @@ def message_payload(message, client_id=None):
         "conversation": message.conversation_id,
         "sender": message.sender_id,
         "body": message.body,
+        "kind": message.kind,
+        "file": message.attachment.url if message.attachment else "",
         "created_at": message.created_at.isoformat(),
         "read": message.read_at is not None,
         "client_id": client_id,
     }
 
 
-def preview_text(body):
+def preview_text(body, kind="text"):
+    if kind == "image":
+        return "📷 " + (" ".join(body.split())[:50] or "Photo")
+    if kind == "voice":
+        return "🎤 Voice message"
     flat = " ".join(body.split())
     return flat if len(flat) <= PREVIEW_LENGTH else flat[: PREVIEW_LENGTH - 1] + "…"
+
