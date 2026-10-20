@@ -155,6 +155,13 @@ STORAGES = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# --- Uploaded files (profile photos) ----------------------------------------
+# NOTE: on Render's free plan the disk is wiped on every deploy. For permanent
+# photos, attach a Render Disk and point MEDIA_ROOT at it (env MEDIA_ROOT).
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.environ.get("MEDIA_ROOT", str(BASE_DIR / "media"))
+DATA_UPLOAD_MAX_MEMORY_SIZE = 6 * 1024 * 1024
+
 # --- Production security ----------------------------------------------------
 if not DEBUG:
     # Render terminates TLS in front of the app and forwards this header.
