@@ -10,7 +10,10 @@ from .services import broadcast_message, conversation_summaries, conversations_f
 
 from .payloads import conversation_info, message_payload
 from .services import conversation_summaries, conversations_for
+from django.db import transaction
 from django.views.decorators.http import require_GET, require_POST
+
+from billing.limits import consume, get_status, limit_message
 
 PAGE_SIZE = 40
 MAX_IMAGE_MB = 8
@@ -53,7 +56,9 @@ def dashboard(request, conversation_id=None):
         "hasMore": has_more,
         "conversations": conversation_summaries(request.user),
         "messages": initial_messages,
+        "quota": get_status(request.user),
         "urls": {
+            "buy": reverse("pricing"),
             "ws": "/ws/chat/",
             "conversations": reverse("conversations_api"),
             "messages": reverse("messages_api", args=[active.pk]) if active else None,
@@ -131,15 +136,23 @@ def attach_api(request, conversation_id):
             return JsonResponse({"ok": True, "id": existing.pk})
 
     upload.name = f"{uuid.uuid4().hex}.{ext}"   # extension comes from our whitelist, never from the client
-    message = Message.objects.create(
-        conversation=conversation,
-        sender=request.user,
-        kind=kind,
-        attachment=upload,
-        body=(request.POST.get("caption") or "").strip()[:500] if kind == Message.IMAGE else "",
-        client_id=client_id,
-    )
+    # Count it against today's free limit (or a bought credit) and store it in one go.
+    with transaction.atomic():
+        if not consume(request.user, kind):
+            return JsonResponse(
+                {"error": limit_message(kind), "limit": True, "kind": kind, "quota": get_status(request.user)},
+                status=402,
+            )
+        message = Message.objects.create(
+            conversation=conversation,
+            sender=request.user,
+            kind=kind,
+            attachment=upload,
+            body=(request.POST.get("caption") or "").strip()[:500] if kind == Message.IMAGE else "",
+            client_id=client_id,
+        )
     Conversation.objects.filter(pk=conversation.pk).update(updated_at=message.created_at)
-    broadcast_message(conversation, message, request.user, client_id)
-    return JsonResponse({"ok": True, "id": message.pk})
+    quota = get_status(request.user)
+    broadcast_message(conversation, message, request.user, client_id, quota=quota)
+    return JsonResponse({"ok": True, "id": message.pk, "quota": quota})
 

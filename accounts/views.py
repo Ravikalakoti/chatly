@@ -7,6 +7,8 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404, redirect, render
 
+from billing.catalog import free_limits, packs
+from billing.limits import quota_rows, reset_label
 from chat.services import connect_users, conversations_for
 
 from .forms import LoginForm, SignupForm, ProfileForm
@@ -42,10 +44,24 @@ def _finish_auth(request, user, default="home"):
     return None
 
 
-@login_required
 def home(request):
+    """
+    `/` is two pages in one:
+    - logged out -> the public landing page (what Chatly is, free limits, packs, sign up / log in)
+    - logged in  -> your home: invite link, today's messages left, shortcuts
+    """
+    if not request.user.is_authenticated:
+        return render(
+            request,
+            "accounts/landing.html",
+            {"limits": free_limits(), "packs": packs(), "reset_label": reset_label()},
+        )
     invite_url = request.build_absolute_uri(reverse("invite", args=[request.user.invite_code]))
-    return render(request, "accounts/home.html", {"invite_url": invite_url})
+    return render(
+        request,
+        "accounts/home.html",
+        {"invite_url": invite_url, "rows": quota_rows(request.user), "reset_label": reset_label()},
+    )
 
 
 def signup(request, code=None):

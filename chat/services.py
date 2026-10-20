@@ -42,21 +42,21 @@ def connect_users(user1, user2):
     return conversation, created
 
 
-def broadcast_message(conversation, message, sender, client_id=""):
+def broadcast_message(conversation, message, sender, client_id="", quota=None):
     """Push a stored message to every open tab of both participants (used by photo / voice upload)."""
     layer = get_channel_layer()
     for viewer in (conversation.user_a, conversation.user_b):
+        payload = {
+            "type": "message",
+            "conversation": conversation_info(conversation, viewer),
+            "message": message_payload(message, client_id if viewer.pk == sender.pk else None),
+        }
+        if quota is not None and viewer.pk == sender.pk:
+            payload["quota"] = quota  # lets the sender's tabs update their "messages left" counters
         try:
             async_to_sync(layer.group_send)(
                 user_group(viewer.pk),
-                {
-                    "type": "chat.event",
-                    "payload": {
-                        "type": "message",
-                        "conversation": conversation_info(conversation, viewer),
-                        "message": message_payload(message, client_id if viewer.pk == sender.pk else None),
-                    },
-                },
+                {"type": "chat.event", "payload": payload},
             )
         except Exception:
             logger.exception("Could not push message event")

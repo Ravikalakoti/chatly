@@ -126,6 +126,40 @@
     box-shadow: 0 0 0 4px rgba(239, 80, 117, .09);
   }
 
+  .chat-page .quota-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 0 17px 12px;
+    font-size: 12px;
+  }
+
+  .chat-page .quota-label { margin-right: 2px; color: var(--chat-muted); font-weight: 700; }
+
+  .chat-page .quota-chip {
+    padding: 4px 9px;
+    border-radius: 999px;
+    color: #b05c70;
+    background: #fff1f4;
+    font-weight: 800;
+  }
+
+  .chat-page .quota-chip.low { color: #9a5b00; background: #fff0d6; }
+
+  .chat-page .quota-chip.empty { color: #c21f48; background: #ffdfe6; }
+
+  .chat-page .quota-buy {
+    margin-left: auto;
+    color: var(--chat-primary-dark);
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .chat-page .quota-buy:hover { text-decoration: underline; }
+
+  .toast a { color: inherit; font-weight: 800; text-decoration: underline; }
+
   .chat-page .conv-list {
     flex: 1;
     overflow-y: auto;
@@ -453,6 +487,8 @@
     <div class="search">
       <input id="search" type="search" class="search-input" placeholder="Search chats" autocomplete="off">
     </div>
+
+    <div id="quota-strip" class="quota-strip" aria-label="Messages left"></div>
 
     <nav id="conv-list" class="conv-list" aria-label="Conversations"></nav>
 

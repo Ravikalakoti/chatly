@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Buy more messages · Chatly{% endblock %}
+{% block body_class %}love-page{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/billing.css' %}">{% endblock %}
+
+{% block content %}
+<header class="topbar">
+  <a class="brand" href="{% url 'home' %}">
+    <span class="brand-logo">💖</span>
+    <span class="brand-name">Chatly</span>
+  </a>
+  <div class="topbar-right">
+    <a class="btn btn-ghost" href="{% url 'dashboard' %}">Back to chats</a>
+    <a href="{% url 'profile' %}" title="My profile">{% include "accounts/_avatar.html" with u=request.user %}</a>
+  </div>
+</header>
+
+<main class="buy-wrap">
+  <section class="buy-head">
+    <h1>Buy more messages</h1>
+    <p>Every day you get {{ limits.text }} free text messages, {{ limits.voice }} voice messages and {{ limits.image }} photos. When those run out, a pack keeps you chatting. Bought messages never expire.</p>
+  </section>
+
+  {% if demo_mode %}
+    <p class="buy-banner">Test mode: payments are simulated, so no real money is charged. Add your Razorpay keys to go live.</p>
+  {% elif not payments_enabled %}
+    <p class="buy-banner buy-banner-warn">Payments aren't switched on yet. Please check back soon.</p>
+  {% endif %}
+
+  <section class="love-card quota-card">
+    <h2>Your messages</h2>
+    <p class="muted">Free messages reset every day at {{ reset_label }}. Bought messages are used after the free ones.</p>
+    <ul class="quota-list">
+      {% for r in rows %}
+      <li>
+        <div class="quota-head"><span>{{ r.icon }} {{ r.long|capfirst }}</span><strong data-left="{{ r.kind }}">{{ r.remaining }} left</strong></div>
+        <div class="bar" aria-hidden="true"><span data-bar="{{ r.kind }}" style="width: {{ r.percent }}%"></span></div>
+        <small data-detail="{{ r.kind }}">{{ r.used }} of {{ r.limit }} free used today{% if r.credits %} · {{ r.credits }} bought{% endif %}</small>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <div id="buy-status" class="buy-status" role="status" aria-live="polite" hidden></div>
+
+  <section class="pack-grid" aria-label="Message packs">
+    {% for p in packs %}
+    <article class="pack{% if p.popular %} pack-popular{% endif %}">
+      {% if p.popular %}<span class="pack-flag">Most chosen</span>{% endif %}
+      <h2>{{ p.name }}</h2>
+      <p class="pack-price">{{ p.price_text }}</p>
+      <ul>
+        <li><span>💬</span>{{ p.text }} text messages</li>
+        <li><span>🎤</span>{{ p.voice }} voice messages</li>
+        <li><span>📸</span>{{ p.image }} photos</li>
+      </ul>
+      <button type="button" class="btn btn-primary btn-block" data-pack="{{ p.id }}"{% if not payments_enabled %} disabled{% endif %}>Buy {{ p.name }}</button>
+    </article>
+    {% endfor %}
+  </section>
+
+  <p class="buy-fine">Payments are processed securely by Razorpay (UPI, cards and netbanking). Your messages are added as soon as the payment goes through.</p>
+</main>
+
+{{ config|json_script:"buy-config" }}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/buy.js' %}"></script>
+{% endblock %}

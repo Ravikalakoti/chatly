@@ -1,7 +1,7 @@
 from channels.db import database_sync_to_async
 from channels.routing import URLRouter
 from channels.testing import WebsocketCommunicator
-from django.test import TestCase, TransactionTestCase
+from django.test import TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 
 from accounts.models import User
@@ -125,3 +125,59 @@ class ConsumerTests(TransactionTestCase):
         await ca.send_json_to({"type": "message", "conversation": self.conv.pk, "body": "y" * 4001})
         self.assertEqual((await ca.receive_json_from())["type"], "error")
         await ca.disconnect()
+
+
+class LimitConsumerTests(TransactionTestCase):
+    """Free daily limits over the websocket."""
+
+    def setUp(self):
+        self.a = make_user("Ravi", "ravi@example.com")
+        self.b = make_user("Asha", "asha@example.com")
+        self.conv, _ = connect_users(self.a, self.b)
+
+    async def connect_as(self, user):
+        communicator = WebsocketCommunicator(URLRouter(websocket_urlpatterns), "/ws/chat/")
+        communicator.scope["user"] = user
+        connected, _ = await communicator.connect()
+        self.assertTrue(connected)
+        return communicator
+
+    async def test_text_limit_blocks_then_bought_message_unblocks(self):
+        from billing.limits import add_credits
+
+        with override_settings(FREE_DAILY_LIMITS={"text": 1, "voice": 1, "image": 1}):
+            ca, cb = await self.connect_as(self.a), await self.connect_as(self.b)
+
+            await ca.send_json_to({"type": "message", "conversation": self.conv.pk, "body": "one", "client_id": "m1"})
+            first = await ca.receive_json_from()
+            await cb.receive_json_from()
+            self.assertEqual(first["type"], "message")
+            self.assertEqual(first["quota"]["text"]["remaining"], 0)
+
+            await ca.send_json_to({"type": "message", "conversation": self.conv.pk, "body": "two", "client_id": "m2"})
+            blocked = await ca.receive_json_from()
+            self.assertEqual(blocked["type"], "limit")
+            self.assertEqual(blocked["kind"], "text")
+            self.assertEqual(blocked["client_id"], "m2")
+            self.assertEqual(await database_sync_to_async(Message.objects.count)(), 1)
+
+            await database_sync_to_async(add_credits)(self.a, text=1)
+            await ca.send_json_to({"type": "message", "conversation": self.conv.pk, "body": "three", "client_id": "m3"})
+            sent = await ca.receive_json_from()
+            await cb.receive_json_from()
+            self.assertEqual(sent["type"], "message")
+            self.assertEqual(await database_sync_to_async(Message.objects.count)(), 2)
+
+            await ca.disconnect()
+            await cb.disconnect()
+
+    async def test_resending_the_same_message_does_not_use_another_free_message(self):
+        with override_settings(FREE_DAILY_LIMITS={"text": 1, "voice": 1, "image": 1}):
+            ca, cb = await self.connect_as(self.a), await self.connect_as(self.b)
+            for _ in range(2):  # same client_id twice (e.g. a resend after reconnect)
+                await ca.send_json_to({"type": "message", "conversation": self.conv.pk, "body": "hi", "client_id": "same"})
+                self.assertEqual((await ca.receive_json_from())["type"], "message")
+                await cb.receive_json_from()
+            self.assertEqual(await database_sync_to_async(Message.objects.count)(), 1)
+            await ca.disconnect()
+            await cb.disconnect()

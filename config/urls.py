@@ -15,6 +15,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("accounts.urls")),
     path("", include("chat.urls")),
+    path("", include("billing.urls")),
     # Serves uploaded profile photos (fine for a small app; use S3/Cloudinary when you grow).
     re_path(r"^media/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
 ]
