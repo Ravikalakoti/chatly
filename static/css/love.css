@@ -1,0 +1,187 @@
+/* ==========================================================================
+   Chatly — Love theme (rose & blush). Loaded after app.css on every page.
+   ========================================================================== */
+:root {
+  --rose-50: #fff5f8;
+  --rose-100: #ffe3ec;
+  --rose-200: #ffc7d8;
+  --rose-300: #ff9fba;
+  --rose-400: #fb6b94;
+  --rose-500: #ee4a7c;
+  --rose-600: #d62b63;
+  --rose-700: #b01a4b;
+  --wine: #3d1a28;
+  --love-grad: linear-gradient(135deg, #ff7aa2 0%, #ee4a7c 50%, #d62b63 100%);
+  --script: "Dancing Script", "Brush Script MT", cursive;
+
+  /* override the base palette from app.css (also in dark mode: the app is always "light & lovely") */
+  --green: #ee4a7c;
+  --green-dark: #c9275c;
+  --green-soft: #ffd9e3;
+  --bg: #fff3f6;
+  --panel: #ffffff;
+  --panel-alt: #fff3f6;
+  --header: #fff0f4;
+  --text: #3d1a28;
+  --muted: #93707c;
+  --border: #f8dde5;
+  --bubble-in: #ffffff;
+  --bubble-out: #ffe0ea;
+  --chat-bg: #fff6f8;
+  --chat-dot: rgba(238, 74, 124, .07);
+  --shadow: 0 1px 3px rgba(176, 26, 75, .14);
+  color-scheme: light;
+}
+
+body {
+  font-family: "Nunito", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  color: var(--text);
+}
+a { color: var(--rose-600); }
+.btn-primary { background: var(--love-grad); box-shadow: 0 6px 18px rgba(238, 74, 124, .3); }
+.btn-primary:hover { filter: none; transform: translateY(-2px); box-shadow: 0 10px 24px rgba(238, 74, 124, .4); }
+.toast-success { background: var(--rose-600); }
+.input:focus { border-color: var(--rose-400); box-shadow: 0 0 0 4px rgba(238, 74, 124, .16); }
+
+/* ---------- Floating hearts behind everything ---------- */
+.love-bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.love-bg span {
+  position: absolute; bottom: -50px; left: var(--x); font-size: var(--s); opacity: 0;
+  animation: heart-rise var(--w) linear var(--d) infinite;
+}
+@keyframes heart-rise {
+  0% { transform: translateY(0) translateX(0) rotate(-8deg); opacity: 0; }
+  10% { opacity: .55; }
+  50% { transform: translateY(-55vh) translateX(18px) rotate(8deg); }
+  90% { opacity: .45; }
+  100% { transform: translateY(-112vh) translateX(-14px) rotate(-6deg); opacity: 0; }
+}
+main, .app { position: relative; z-index: 1; }
+.chat-page .love-bg span { opacity: 0; animation-duration: calc(var(--w) * 1.3); }
+
+/* ---------- Shared love-page layout (home + profile pages) ---------- */
+.love-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at 12% 8%, #ffd9e5 0, transparent 42%),
+    radial-gradient(ellipse at 90% 22%, #ffe9d6 0, transparent 38%),
+    radial-gradient(ellipse at 50% 100%, #ffcadb 0, transparent 45%),
+    #fff5f8;
+  background-attachment: fixed;
+}
+.love-page .topbar {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px 7%;
+  background: rgba(255, 255, 255, .78); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--rose-100);
+  box-shadow: 0 6px 26px rgba(238, 74, 124, .08);
+}
+.love-page .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.love-page .brand-logo {
+  width: 44px; height: 44px; display: grid; place-items: center; border-radius: 15px; font-size: 23px;
+  background: var(--love-grad); box-shadow: 0 6px 18px rgba(238, 74, 124, .35);
+  animation: heartbeat 2.4s ease-in-out infinite;
+}
+.love-page .brand-name { font-family: var(--script); font-size: 32px; font-weight: 700; color: var(--rose-600); line-height: 1; }
+.love-page .topbar-right { display: flex; align-items: center; gap: 12px; }
+.love-page .topbar-right form { margin: 0; }
+.love-page .avatar { width: 42px; height: 42px; border-radius: 50%; box-shadow: 0 0 0 3px #fff, 0 4px 14px rgba(238, 74, 124, .35); background: var(--love-grad); }
+.love-page .avatar.xl { width: 104px; height: 104px; font-size: 2.4rem; }
+.love-page .avatar.xxl { width: 150px; height: 150px; font-size: 3.4rem; margin: 0; box-shadow: 0 0 0 6px #fff, 0 12px 34px rgba(238, 74, 124, .4); }
+.love-page .btn { border-radius: 14px; }
+.love-page .btn-ghost { color: var(--rose-600); background: #fff; border: 1px solid var(--rose-200); }
+.love-page .btn-ghost:hover { background: var(--rose-100); }
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  12% { transform: scale(1.12); }
+  24% { transform: scale(1); }
+  36% { transform: scale(1.08); }
+  48% { transform: scale(1); }
+}
+@keyframes fade-up { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Home page ---------- */
+.love-home { width: min(92%, 780px); margin: 0 auto; padding: 44px 0 70px; }
+.hero { text-align: center; animation: fade-up .8s ease both; }
+.hero-heart {
+  display: inline-block; font-size: 76px; line-height: 1; margin-bottom: 4px;
+  filter: drop-shadow(0 10px 18px rgba(238, 74, 124, .4)); animation: heartbeat 2s ease-in-out infinite;
+}
+.hero h1 { font-family: var(--script); font-size: clamp(38px, 8vw, 62px); font-weight: 700; color: var(--rose-600); margin: 0 0 6px; line-height: 1.1; }
+.hero .lead { max-width: 520px; margin: 0 auto 22px; color: var(--muted); font-size: 1.08rem; line-height: 1.7; }
+.love-quote {
+  position: relative; max-width: 540px; margin: 0 auto 34px; padding: 16px 22px; border-radius: 20px;
+  background: rgba(255, 255, 255, .8); border: 1px dashed var(--rose-300);
+  font-family: var(--script); font-size: 1.5rem; color: var(--rose-700); min-height: 3.2em; display: grid; place-items: center;
+  transition: opacity .5s;
+}
+.love-quote.fade { opacity: 0; }
+
+.love-card {
+  position: relative; overflow: hidden; padding: 30px; margin-bottom: 26px; border-radius: 26px;
+  background: rgba(255, 255, 255, .88); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--rose-100); box-shadow: 0 18px 50px rgba(238, 74, 124, .13);
+  animation: fade-up 1s ease both; transition: transform .3s, box-shadow .3s;
+}
+.love-card:hover { transform: translateY(-4px); box-shadow: 0 24px 56px rgba(238, 74, 124, .2); }
+.love-card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 5px; background: var(--love-grad); }
+.love-card h2 { font-size: 1.5rem; margin: 6px 0 8px; color: var(--rose-700); }
+.love-card .muted { color: var(--muted); line-height: 1.7; }
+.love-card .copy-row { display: flex; gap: 10px; margin-top: 20px; }
+.love-card .copy-row .input { flex: 1; min-width: 0; background: var(--rose-50); border-color: var(--rose-200); color: var(--rose-700); }
+.love-card .copy-row .btn { flex: none; min-width: 120px; }
+.love-card .share-btn { margin-top: 12px; }
+
+.perks { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 0 0 30px; padding: 0; list-style: none; }
+.perks li {
+  padding: 18px 14px; text-align: center; border-radius: 20px; background: rgba(255, 255, 255, .8);
+  border: 1px solid var(--rose-100); box-shadow: 0 8px 24px rgba(238, 74, 124, .08);
+  font-weight: 700; color: var(--rose-700); animation: fade-up 1.1s ease both;
+}
+.perks li span { display: block; font-size: 30px; margin-bottom: 6px; }
+.perks li small { display: block; margin-top: 3px; font-weight: 600; color: var(--muted); font-size: .8rem; }
+.cta-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.btn-lg { padding: .9em 1.7em; font-size: 1.05rem; }
+
+/* ---------- Profile pages ---------- */
+.profile-wrap { width: min(92%, 560px); margin: 0 auto; padding: 36px 0 70px; }
+.profile-card {
+  position: relative; overflow: hidden; padding: 0 28px 30px; text-align: center; border-radius: 28px;
+  background: rgba(255, 255, 255, .92); border: 1px solid var(--rose-100);
+  box-shadow: 0 22px 60px rgba(238, 74, 124, .16); animation: fade-up .7s ease both;
+}
+.profile-cover {
+  height: 140px; margin: 0 -28px 0; position: relative; overflow: hidden;
+  background: linear-gradient(120deg, #ff8fb1, #ee4a7c 55%, #ff9a8b);
+}
+.profile-cover::before, .profile-cover::after { position: absolute; font-size: 38px; opacity: .55; content: "💗"; animation: heartbeat 3s infinite; }
+.profile-cover::before { left: 12%; top: 22px; }
+.profile-cover::after { right: 14%; top: 54px; content: "💕"; font-size: 30px; animation-delay: .8s; }
+.profile-card .avatar-slot { position: relative; z-index: 2; margin-top: -75px; display: flex; justify-content: center; }
+.profile-card h1 { margin: 16px 0 4px; font-family: var(--script); font-size: 2.6rem; color: var(--rose-600); line-height: 1.1; }
+.about-bubble {
+  display: inline-block; max-width: 100%; margin: 8px 0 14px; padding: 10px 18px; border-radius: 20px 20px 20px 6px;
+  background: var(--rose-100); color: var(--rose-700); font-weight: 600; overflow-wrap: anywhere;
+}
+.contact-list { display: grid; gap: 6px; margin: 0 0 20px; color: var(--muted); font-size: .95rem; }
+.profile-photo { display: flex; align-items: center; gap: 18px; margin: 20px 0; text-align: left; }
+.profile-form input[type=file] { display: none; }
+.profile-form { text-align: left; }
+.profile-form .field-label { display: block; margin: 14px 0 6px; font-weight: 700; color: var(--rose-700); }
+.profile-form .btn-primary { margin-top: 20px; width: 100%; }
+.field-error { color: var(--danger); margin: 4px 0 0; font-size: .9rem; }
+.small { font-size: .9rem; }
+
+@media (max-width: 600px) {
+  .love-page .topbar { padding: 12px 5%; }
+  .love-page .brand-name { font-size: 27px; }
+  .love-card { padding: 24px 18px; border-radius: 22px; }
+  .love-card .copy-row { flex-direction: column; }
+  .love-card .copy-row .btn { width: 100%; }
+  .love-home { padding-top: 28px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .love-bg span, .love-page *, .profile-cover::before, .profile-cover::after { animation: none !important; transition: none !important; }
+}

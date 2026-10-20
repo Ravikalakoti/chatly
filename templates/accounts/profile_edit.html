@@ -1,39 +1,41 @@
 {% extends "base.html" %}
-{% load static %}
 {% block title %}My profile · Chatly{% endblock %}
-{% block body_class %}home-page{% endblock %}
+{% block body_class %}love-page{% endblock %}
 
 {% block content %}
 <header class="topbar">
-  <a class="brand" href="{% url 'dashboard' %}"><span class="brand-logo">💬</span><span class="brand-name">Chatly</span></a>
+  <a class="brand" href="{% url 'home' %}"><span class="brand-logo">💖</span><span class="brand-name">Chatly</span></a>
   <div class="topbar-right"><a class="btn btn-ghost" href="{% url 'dashboard' %}">← Chats</a></div>
 </header>
 
-<main class="home">
-  <h1>My profile</h1>
-  <form class="card" method="post" enctype="multipart/form-data">
+<main class="profile-wrap">
+  <form class="profile-card profile-form" method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    <div class="profile-photo">
-      <span id="avatar-preview" class="avatar av-{{ request.user.avatar_index }} xl">
+    <div class="profile-cover"></div>
+    <div class="avatar-slot">
+      <span id="avatar-preview" class="avatar av-{{ request.user.avatar_index }} xxl">
         {% if request.user.avatar %}<img src="{{ request.user.avatar.url }}" alt="">{% else %}{{ request.user.initial }}{% endif %}
       </span>
-      <div>
-        <label for="avatar-input" class="btn btn-ghost">Choose photo</label>
-        {{ form.avatar }}
-        {% for e in form.avatar.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
-        <p class="muted small">JPG or PNG, up to 5 MB. Tick "Clear" below to remove it.</p>
-      </div>
+    </div>
+    <div style="text-align:center; margin-top: 14px;">
+      <label for="avatar-input" class="btn btn-ghost">📷 Choose photo</label>
+      {{ form.avatar }}
+      {% for e in form.avatar.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+      <p class="muted small">JPG or PNG, up to 5 MB.</p>
+      {% if request.user.avatar %}
+        <label class="small"><input type="checkbox" name="remove_avatar"> Remove my photo</label>
+      {% endif %}
     </div>
 
     <label class="field-label" for="{{ form.display_name.id_for_label }}">Your name</label>
     {{ form.display_name }}
     {% for e in form.display_name.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
 
-    <label class="field-label" for="{{ form.about.id_for_label }}">About</label>
+    <label class="field-label" for="{{ form.about.id_for_label }}">About you</label>
     {{ form.about }}
     {% for e in form.about.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
 
-    <button class="btn btn-primary" type="submit">Save profile</button>
+    <button class="btn btn-primary btn-lg" type="submit">Save my profile 💾</button>
   </form>
 </main>
 
