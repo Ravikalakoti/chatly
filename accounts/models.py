@@ -26,6 +26,21 @@ class User(AbstractUser):
     invite_code = models.CharField(max_length=16, unique=True, default=generate_invite_code, editable=False)
     avatar = models.ImageField(upload_to="avatars/", blank=True)
     about = models.CharField(max_length=140, blank=True)
+    date_of_birth = models.DateField(
+    null=True,
+    blank=True,
+    )
+
+    gender = models.CharField(
+        max_length=10,
+        choices=[
+            ("male", "Male"),
+            ("female", "Female"),
+            ("other", "Other"),
+        ],
+        blank=True,
+        null=True
+    )
 
     REQUIRED_FIELDS = ["email", "display_name"]
 
