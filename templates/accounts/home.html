@@ -339,13 +339,7 @@
     </div>
 
     <div class="topbar-right">
-        <div
-            class="avatar av-{{ request.user.avatar_index }}"
-            title="{{ request.user.name }}"
-        >
-            {{ request.user.initial }}
-        </div>
-
+        <a href="{% url 'profile' %}" title="My profile">{% include "accounts/_avatar.html" with u=request.user %}</a>
         <form method="post" action="{% url 'logout' %}">
             {% csrf_token %}
             <button type="submit" class="btn btn-ghost">

@@ -10,6 +10,9 @@ def conversation_info(conversation, viewer):
     return {
         "id": conversation.pk,
         "name": other.name,
+        "user_id": other.pk,
+        "avatar": other.avatar_url,
+        "profile_url": reverse("profile_detail", args=[other.pk]),
         "initial": other.initial,
         "color": other.avatar_index,
         "url": reverse("chat", args=[conversation.pk]),

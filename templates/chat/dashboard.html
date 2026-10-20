@@ -433,7 +433,7 @@
 
   <aside class="sidebar">
     <header class="sidebar-header">
-      <a href="{% url 'home' %}" class="avatar av-{{ request.user.avatar_index }}" title="{{ request.user.name }} · home">{{ request.user.initial }}</a>
+       <a href="{% url 'profile' %}" title="My profile">{% include "accounts/_avatar.html" with u=request.user %}</a>
       <div class="sidebar-title">Chats</div>
 
       <div class="sidebar-actions">
@@ -470,12 +470,13 @@
           <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20z"/></svg>
         </a>
 
-        <div id="peer-avatar" class="avatar"></div>
-
-        <div class="chat-header-text">
-          <div id="peer-name" class="chat-name"></div>
-          <div id="peer-status" class="chat-status" hidden>typing…</div>
-        </div>
+        <a id="peer-link" class="peer-link" href="#" title="View profile">
+            <div id="peer-avatar" class="avatar"></div>
+            <div class="chat-header-text">
+                <div id="peer-name" class="chat-name"></div>
+                <div id="peer-status" class="chat-status" hidden>typing…</div>
+            </div>
+        </a>
       </header>
 
       <div id="conn-banner" class="conn-banner" hidden>Connecting…</div>

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ person.name }} · Chatly{% endblock %}
+{% block body_class %}home-page{% endblock %}
+
+{% block content %}
+<header class="topbar">
+  <a class="brand" href="{% url 'dashboard' %}"><span class="brand-logo">💬</span><span class="brand-name">Chatly</span></a>
+  <div class="topbar-right"><a class="btn btn-ghost" href="{% url 'chat' conversation.pk %}">← Back to chat</a></div>
+</header>
+
+<main class="home">
+  <section class="card profile-view">
+    {% include "accounts/_avatar.html" with u=person size="xxl" %}
+    <h1>{{ person.name }}</h1>
+    <p class="muted">{{ person.about|default:"Hey there! I am using Chatly." }}</p>
+    {% if person.email %}<p class="small">✉️ {{ person.email }}</p>{% endif %}
+    {% if person.phone %}<p class="small">📞 {{ person.phone }}</p>{% endif %}
+    <a class="btn btn-primary" href="{% url 'chat' conversation.pk %}">Message</a>
+  </section>
+</main>
+{% endblock %}

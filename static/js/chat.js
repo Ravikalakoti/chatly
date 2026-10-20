@@ -92,6 +92,19 @@
   cfg.conversations.forEach((c) => convs.set(c.id, c));
   if (activeId && convs.has(activeId)) convs.get(activeId).unread = 0;
   const typingTimers = new Map();          // conversation id -> timeout handle
+  // Round avatar: profile photo if the person has one, otherwise a coloured initial.
+  function avatarEl(c) {
+      const d = el('div', 'avatar av-' + c.color);
+      if (c.avatar) {
+          const img = document.createElement('img');
+          img.src = c.avatar;
+          img.alt = c.name;
+          d.appendChild(img);
+      } else {
+          d.textContent = c.initial;
+      }
+      return d;
+  }
 
   function buildConvItem(c) {
     const a = el('a', 'conv');
@@ -99,7 +112,7 @@
     a.dataset.id = c.id;
     if (c.id === activeId) a.classList.add('active');
 
-    a.appendChild(el('div', 'avatar av-' + c.color, c.initial));
+    a.appendChild(avatarEl(c));
 
     const main = el('div', 'conv-main');
     const top = el('div', 'conv-top');
@@ -456,8 +469,8 @@
   renderSidebar();
 
   if (active) {
-    els.peerAvatar.className = 'avatar av-' + active.color;
-    els.peerAvatar.textContent = active.initial;
+    els.peerAvatar.replaceWith(avatarEl(active));
+    document.getElementById('peer-link').href = active.profile_url;
     els.peerName.textContent = active.name;
 
     store = cfg.messages.slice();

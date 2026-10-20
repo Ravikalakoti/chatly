@@ -24,6 +24,8 @@ class User(AbstractUser):
     phone = models.CharField(max_length=20, unique=True, null=True, blank=True)
     display_name = models.CharField(max_length=60, blank=True)
     invite_code = models.CharField(max_length=16, unique=True, default=generate_invite_code, editable=False)
+    avatar = models.ImageField(upload_to="avatars/", blank=True)
+    about = models.CharField(max_length=140, blank=True)
 
     REQUIRED_FIELDS = ["email", "display_name"]
 
@@ -46,6 +48,14 @@ class User(AbstractUser):
     @property
     def avatar_index(self):
         return (self.pk or 0) % AVATAR_COLORS
+
+    @property
+    def avatar_url(self):
+        return self.avatar.url if self.avatar else ""
+
+    @property
+    def avatar_index(self):
+         return (self.pk or 0) % AVATAR_COLORS
 
     def __str__(self):
         return self.name

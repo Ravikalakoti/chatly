@@ -101,3 +101,56 @@ class LoginForm(StyledForm):
             if self.user is None:
                 raise forms.ValidationError("Incorrect phone/email or password.")
         return cleaned
+
+
+class ProfileForm(forms.ModelForm):
+    """Edit my own profile: name, about line and profile photo."""
+
+    MAX_PHOTO_MB = 5
+    remove_avatar = forms.BooleanField(required=False, label="Remove my photo")
+
+    class Meta:
+        model = User
+        fields = ["display_name", "about", "avatar"]
+        labels = {
+            "display_name": "Your name",
+            "about": "About",
+            "avatar": "Profile photo",
+        }
+        widgets = {
+            "display_name": forms.TextInput(attrs={"class": "input"}),
+            "about": forms.TextInput(attrs={
+                "class": "input",
+                "placeholder": "Hey there! I am using Chatly.",
+            }),
+            "avatar": forms.FileInput(attrs={
+                "accept": "image/*",
+                "id": "avatar-input",
+            }),
+        }
+
+    def clean_display_name(self):
+        name = " ".join(self.cleaned_data["display_name"].split())
+        if not name:
+            raise forms.ValidationError("Please enter your name.")
+        return name
+
+    def clean_avatar(self):
+        photo = self.cleaned_data.get("avatar")
+        # `photo` is a fresh upload only when it has a content_type;
+        # otherwise it's the existing file/False (clear).
+        if photo and hasattr(photo, "content_type"):
+            if photo.size > self.MAX_PHOTO_MB * 1024 * 1024:
+                raise forms.ValidationError(
+                    f"Photo must be smaller than {self.MAX_PHOTO_MB} MB."
+                )
+        return photo
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        if self.cleaned_data.get("remove_avatar") and not self.files.get("avatar"):
+            user.avatar = ""
+        if commit:
+            user.save()
+        return user
+
