@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 {% load static %}
 {% block title %}Chats · Chatly{% endblock %}
@@ -125,6 +124,40 @@
     background: white;
     box-shadow: 0 0 0 4px rgba(239, 80, 117, .09);
   }
+
+  .chat-page .quota-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 0 17px 12px;
+    font-size: 12px;
+  }
+
+  .chat-page .quota-label { margin-right: 2px; color: var(--chat-muted); font-weight: 700; }
+
+  .chat-page .quota-chip {
+    padding: 4px 9px;
+    border-radius: 999px;
+    color: #b05c70;
+    background: #fff1f4;
+    font-weight: 800;
+  }
+
+  .chat-page .quota-chip.low { color: #9a5b00; background: #fff0d6; }
+
+  .chat-page .quota-chip.empty { color: #c21f48; background: #ffdfe6; }
+
+  .chat-page .quota-buy {
+    margin-left: auto;
+    color: var(--chat-primary-dark);
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .chat-page .quota-buy:hover { text-decoration: underline; }
+
+  .toast a { color: inherit; font-weight: 800; text-decoration: underline; }
 
   .chat-page .conv-list {
     flex: 1;
@@ -437,6 +470,9 @@
       <div class="sidebar-title">Chats 💗</div>
 
       <div class="sidebar-actions">
+        <a class="icon-btn" href="{% url 'home' %}" title="Home" aria-label="Home">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg>
+        </a>
         <a class="icon-btn" href="{% url 'home' %}" title="Invite a friend" aria-label="Invite a friend">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M15 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2zm9 4c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4z"/></svg>
         </a>
@@ -453,6 +489,8 @@
     <div class="search">
       <input id="search" type="search" class="search-input" placeholder="Search chats" autocomplete="off">
     </div>
+
+    <div id="quota-strip" class="quota-strip" aria-label="Messages left"></div>
 
     <nav id="conv-list" class="conv-list" aria-label="Conversations"></nav>
 

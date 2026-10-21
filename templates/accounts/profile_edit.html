@@ -3,53 +3,96 @@
 {% block body_class %}love-page{% endblock %}
 
 {% block content %}
-<header class="topbar">
-  <a class="brand" href="{% url 'home' %}"><span class="brand-logo">💖</span><span class="brand-name">Chatly</span></a>
-  <div class="topbar-right"><a class="btn btn-ghost" href="{% url 'dashboard' %}">← Chats</a></div>
-</header>
+{% include "accounts/_nav.html" with active="profile" %}
 
 <main class="profile-wrap">
   <form class="profile-card profile-form" method="post" enctype="multipart/form-data">
     {% csrf_token %}
+
     <div class="profile-cover"></div>
+
     <div class="avatar-slot">
       <span id="avatar-preview" class="avatar av-{{ request.user.avatar_index }} xxl">
-        {% if request.user.avatar %}<img src="{{ request.user.avatar.url }}" alt="">{% else %}{{ request.user.initial }}{% endif %}
+        {% if request.user.avatar %}
+          <img src="{{ request.user.avatar.url }}" alt="">
+        {% else %}
+          {{ request.user.initial }}
+        {% endif %}
       </span>
     </div>
+
     <div style="text-align:center; margin-top: 14px;">
       <label for="avatar-input" class="btn btn-ghost">📷 Choose photo</label>
       {{ form.avatar }}
-      {% for e in form.avatar.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+      {% for e in form.avatar.errors %}
+        <p class="field-error">{{ e }}</p>
+      {% endfor %}
+
       <p class="muted small">JPG or PNG, up to 5 MB.</p>
+
       {% if request.user.avatar %}
-        <label class="small"><input type="checkbox" name="remove_avatar"> Remove my photo</label>
+        <label class="small">
+          {{ form.remove_avatar }} Remove my photo
+        </label>
       {% endif %}
     </div>
 
     <label class="field-label" for="{{ form.display_name.id_for_label }}">Your name</label>
     {{ form.display_name }}
-    {% for e in form.display_name.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+    {% for e in form.display_name.errors %}
+      <p class="field-error">{{ e }}</p>
+    {% endfor %}
+
+    <label class="field-label" for="{{ form.date_of_birth.id_for_label }}">Date of Birth</label>
+    {{ form.date_of_birth }}
+    {% for e in form.date_of_birth.errors %}
+      <p class="field-error">{{ e }}</p>
+    {% endfor %}
+
+    <label class="field-label" for="{{ form.gender.id_for_label }}">Gender</label>
+    {{ form.gender }}
+    {% for e in form.gender.errors %}
+      <p class="field-error">{{ e }}</p>
+    {% endfor %}
 
     <label class="field-label" for="{{ form.about.id_for_label }}">About you</label>
     {{ form.about }}
-    {% for e in form.about.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+    {% for e in form.about.errors %}
+      <p class="field-error">{{ e }}</p>
+    {% endfor %}
+
+    {% if form.non_field_errors %}
+      {% for e in form.non_field_errors %}
+        <p class="field-error">{{ e }}</p>
+      {% endfor %}
+    {% endif %}
 
     <button class="btn btn-primary btn-lg" type="submit">Save my profile 💾</button>
   </form>
 </main>
 
 <script>
-  // Show the chosen photo instantly, before saving.
-  var input = document.getElementById('avatar-input');
-  input.addEventListener('change', function () {
-    var f = input.files[0];
-    if (!f) return;
-    var box = document.getElementById('avatar-preview');
-    box.innerHTML = '';
-    var img = document.createElement('img');
-    img.src = URL.createObjectURL(f);
-    box.appendChild(img);
-  });
+  // Preview the selected photo before saving.
+  const input = document.getElementById("avatar-input");
+
+  if (input) {
+    input.addEventListener("change", function () {
+      const file = input.files[0];
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        input.value = "";
+        return;
+      }
+
+      const box = document.getElementById("avatar-preview");
+      box.innerHTML = "";
+
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(file);
+      img.alt = "Profile photo preview";
+      box.appendChild(img);
+    });
+  }
 </script>
 {% endblock %}

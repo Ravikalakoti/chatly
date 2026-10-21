@@ -1,16 +1,30 @@
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.contrib import messages
+from django.utils import timezone
+from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET
 import uuid
 from PIL import Image, UnidentifiedImageError
-from .models import Conversation, Message
-from .services import broadcast_message, conversation_summaries, conversations_for
+from .models import Conversation, Message, Notification
+from .services import (
+    answer_chat_request,
+    broadcast_message,
+    conversation_summaries,
+    conversations_for,
+    mark_conversation_notifications_seen,
+    notification_payload,
+    send_chat_request,
+)
 
 from .payloads import conversation_info, message_payload
 from .services import conversation_summaries, conversations_for
+from django.db import transaction
 from django.views.decorators.http import require_GET, require_POST
+
+from billing.limits import consume, get_status, limit_message
 
 PAGE_SIZE = 40
 MAX_IMAGE_MB = 8
@@ -44,6 +58,7 @@ def dashboard(request, conversation_id=None):
         active = get_object_or_404(
             conversations_for(request.user).select_related("user_a", "user_b"), pk=conversation_id
         )
+        mark_conversation_notifications_seen(request.user, active.pk)
         page, has_more = _message_page(active)
         initial_messages = [message_payload(m) for m in page]
 
@@ -53,7 +68,9 @@ def dashboard(request, conversation_id=None):
         "hasMore": has_more,
         "conversations": conversation_summaries(request.user),
         "messages": initial_messages,
+        "quota": get_status(request.user),
         "urls": {
+            "buy": reverse("pricing"),
             "ws": "/ws/chat/",
             "conversations": reverse("conversations_api"),
             "messages": reverse("messages_api", args=[active.pk]) if active else None,
@@ -65,6 +82,51 @@ def dashboard(request, conversation_id=None):
         "chat/dashboard.html",
         {"config": config, "active": active, "peer": active.other_user(request.user) if active else None},
     )
+
+
+@login_required
+@require_POST
+def request_send(request, user_id):
+    person = get_object_or_404(get_user_model(), pk=user_id, is_active=True)
+    state, conversation = send_chat_request(request.user, person)
+    texts = {
+        "sent": (messages.SUCCESS, f"Request sent to {person.name} 💌"),
+        "already_sent": (messages.INFO, f"You already sent a request to {person.name}."),
+        "connected": (messages.SUCCESS, f"{person.name} had already asked you. You're now connected!"),
+        "exists": (messages.INFO, f"You're already connected with {person.name}."),
+    }
+    level, text = texts.get(state, (messages.ERROR, "You can't send a request to this person."))
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":  # the home page sends it without reloading
+        return JsonResponse(
+            {
+                "ok": state in texts,
+                "state": state,
+                "message": text,
+                "chat_url": reverse("chat", args=[conversation.pk]) if conversation else "",
+            }
+        )
+    messages.add_message(request, level, text)
+    if conversation is not None:
+        return redirect("chat", conversation_id=conversation.pk)
+    return redirect("home")
+
+
+@login_required
+@require_POST
+def request_accept(request, request_id):
+    conversation = answer_chat_request(request.user, request_id, accept=True)
+    if conversation is None:
+        messages.error(request, "That request is no longer available.")
+        return redirect("home")
+    messages.success(request, "Request accepted. Say hi!")
+    return redirect("chat", conversation_id=conversation.pk)
+
+
+@login_required
+@require_POST
+def request_decline(request, request_id):
+    answer_chat_request(request.user, request_id, accept=False)
+    return redirect("home")
 
 
 @login_required
@@ -131,15 +193,38 @@ def attach_api(request, conversation_id):
             return JsonResponse({"ok": True, "id": existing.pk})
 
     upload.name = f"{uuid.uuid4().hex}.{ext}"   # extension comes from our whitelist, never from the client
-    message = Message.objects.create(
-        conversation=conversation,
-        sender=request.user,
-        kind=kind,
-        attachment=upload,
-        body=(request.POST.get("caption") or "").strip()[:500] if kind == Message.IMAGE else "",
-        client_id=client_id,
-    )
+    # Count it against today's free limit (or a bought credit) and store it in one go.
+    with transaction.atomic():
+        if not consume(request.user, kind):
+            return JsonResponse(
+                {"error": limit_message(kind), "limit": True, "kind": kind, "quota": get_status(request.user)},
+                status=402,
+            )
+        message = Message.objects.create(
+            conversation=conversation,
+            sender=request.user,
+            kind=kind,
+            attachment=upload,
+            body=(request.POST.get("caption") or "").strip()[:500] if kind == Message.IMAGE else "",
+            client_id=client_id,
+        )
     Conversation.objects.filter(pk=conversation.pk).update(updated_at=message.created_at)
-    broadcast_message(conversation, message, request.user, client_id)
-    return JsonResponse({"ok": True, "id": message.pk})
+    quota = get_status(request.user)
+    broadcast_message(conversation, message, request.user, client_id, quota=quota)
+    return JsonResponse({"ok": True, "id": message.pk, "quota": quota})
 
+
+
+@login_required
+@require_GET
+def notifications_api(request):
+    """Bell menu data: how many unseen + the latest notifications."""
+    return JsonResponse(notification_payload(request.user))
+
+
+@login_required
+@require_POST
+def notifications_seen(request):
+    """Opening the bell marks everything as seen (the red number disappears)."""
+    Notification.objects.filter(user=request.user, seen_at__isnull=True).update(seen_at=timezone.now())
+    return JsonResponse({"ok": True, "unseen": 0})

@@ -1,4 +1,6 @@
+from django.conf import settings
 from django.contrib import messages
+from django.http import JsonResponse
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
@@ -7,7 +9,9 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404, redirect, render
 
-from chat.services import connect_users, conversations_for
+from billing.catalog import free_limits, packs
+from billing.limits import quota_rows, reset_label
+from chat.services import connect_users, conversations_for, incoming_requests, recommended_profiles
 
 from .forms import LoginForm, SignupForm, ProfileForm
 from .models import User
@@ -42,10 +46,36 @@ def _finish_auth(request, user, default="home"):
     return None
 
 
-@login_required
 def home(request):
+    """
+    `/` is two pages in one:
+    - logged out -> the public landing page (what Chatly is, free limits, packs, sign up / log in)
+    - logged in  -> your home: invite link, today's messages left, shortcuts
+    """
+    if not request.user.is_authenticated:
+        return render(
+            request,
+            "accounts/landing.html",
+            {"limits": free_limits(), "packs": packs(), "reset_label": reset_label()},
+        )
     invite_url = request.build_absolute_uri(reverse("invite", args=[request.user.invite_code]))
-    return render(request, "accounts/home.html", {"invite_url": invite_url})
+    suggestions, suggestion_limit = recommended_profiles(request.user)
+    return render(
+        request,
+        "accounts/home.html",
+        {
+            "invite_url": invite_url,
+            "rows": quota_rows(request.user),
+            "reset_label": reset_label(),
+            "recommended": suggestions,
+            "recommended_limit": suggestion_limit,
+            "needs_gender": request.user.gender not in ("male", "female"),
+            "chat_requests": incoming_requests(request.user),
+            "show_dev_notice": not request.user.seen_dev_notice,
+            "dev_contact_name": settings.DEV_CONTACT_NAME,
+            "dev_contact_email": settings.DEV_CONTACT_EMAIL,
+        },
+    )
 
 
 def signup(request, code=None):
@@ -134,3 +164,11 @@ def profile_detail(request, user_id):
         "accounts/profile_detail.html",
         {"person": person, "conversation": conversation}
     )
+
+
+@login_required
+@require_POST
+def dev_notice_seen(request):
+    """The welcome popup was closed: never show it to this person again."""
+    User.objects.filter(pk=request.user.pk).update(seen_dev_notice=True)
+    return JsonResponse({"ok": True})

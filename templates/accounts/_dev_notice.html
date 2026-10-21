@@ -1,0 +1,34 @@
+{% comment %}First-visit popup: we are in the development phase, payments are only a UI preview. Include with show_dev_notice true.{% endcomment %}
+<div class="dn-overlay" id="dev-notice" role="dialog" aria-modal="true" aria-labelledby="dn-title" data-seen-url="{% url 'dev_notice_seen' %}" data-csrf="{{ csrf_token }}">
+  <div class="dn-card">
+    <div class="dn-hearts" aria-hidden="true">💖</div>
+    <h2 id="dn-title">Welcome to Chatly 💕</h2>
+    <p class="dn-lead">Thanks for being one of our very first users!</p>
+    <ul class="dn-list">
+      <li><span>🚧</span><div><b>We're in our development phase.</b> Things may change, and you might spot a few rough edges.</div></li>
+      <li><span>💳</span><div><b>Payments are not implemented yet.</b> The pricing and "Buy messages" screens are only a UI preview. Nothing is charged and no real payment happens.</div></li>
+      <li><span>💌</span><div><b>Questions or feedback?</b> Contact {{ dev_contact_name }} at <a href="mailto:{{ dev_contact_email }}">{{ dev_contact_email }}</a>.</div></li>
+    </ul>
+    <button type="button" class="btn btn-primary btn-lg dn-ok" id="dn-ok">Got it 💗</button>
+  </div>
+</div>
+<script>
+  (function () {
+    var box = document.getElementById('dev-notice');
+    if (!box) return;
+    var ok = document.getElementById('dn-ok');
+    function close() {
+      box.classList.add('closing');
+      try {
+        fetch(box.dataset.seenUrl, { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': box.dataset.csrf } });
+      } catch (e) {}
+      setTimeout(function () { box.remove(); }, 250);
+      document.removeEventListener('keydown', onKey);
+    }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    ok.addEventListener('click', close);
+    box.addEventListener('click', function (e) { if (e.target === box) close(); });
+    document.addEventListener('keydown', onKey);
+    ok.focus();
+  })();
+</script>

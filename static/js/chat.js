@@ -17,6 +17,7 @@
 
   const $ = (sel) => document.querySelector(sel);
   const els = {
+    quota: $('#quota-strip'),
     list: $('#conv-list'),
     empty: $('#list-empty'),
     search: $('#search'),
@@ -96,6 +97,45 @@
     t.addEventListener('click', () => t.classList.add('toast-hide'));
     setTimeout(() => t.classList.add('toast-hide'), 4500);
     setTimeout(() => t.remove(), 5200);
+  }
+
+  // A longer-lived toast that ends with a "Buy more" link (used when a daily limit is reached).
+  function limitToast(text) {
+    let box = document.querySelector('.toasts');
+    if (!box) {
+      box = el('div', 'toasts');
+      document.body.appendChild(box);
+    }
+    const t = el('div', 'toast toast-info', (text || 'Daily limit reached.') + ' ');
+    const link = el('a', null, 'Buy more');
+    link.href = cfg.urls.buy;
+    t.appendChild(link);
+    box.appendChild(t);
+    setTimeout(() => t.classList.add('toast-hide'), 9000);
+    setTimeout(() => t.remove(), 9700);
+  }
+
+  // ------------------------------------------------- messages left (daily limits)
+  const QUOTA_KINDS = [
+    ['text', '💬', 'text messages'],
+    ['voice', '🎤', 'voice messages'],
+    ['image', '📸', 'photos'],
+  ];
+
+  function renderQuota(q) {
+    if (!q || !els.quota) return;
+    const chips = QUOTA_KINDS.map((k) => {
+      const d = q[k[0]];
+      if (!d) return null;
+      const state = d.remaining === 0 ? ' empty' : d.remaining <= 2 ? ' low' : '';
+      const chip = el('span', 'quota-chip' + state, k[1] + ' ' + d.remaining);
+      chip.title = d.remaining + ' ' + k[2] + ' left' +
+        (d.credits ? ' (' + d.free_left + ' free today + ' + d.credits + ' bought)' : ' (' + d.limit + ' free a day)');
+      return chip;
+    }).filter(Boolean);
+    const buy = el('a', 'quota-buy', 'Buy more');
+    buy.href = q.buy_url || cfg.urls.buy;
+    els.quota.replaceChildren(el('span', 'quota-label', 'Left'), ...chips, buy);
   }
 
   // ------------------------------------------------------------------ sidebar
@@ -419,12 +459,30 @@
         }
         return;
       }
+      case 'limit': return onLimit(ev);
       case 'error': return toast(ev.detail || 'Something went wrong.');
       default: return;
     }
   }
 
+  // The server refused a text message because today's free limit (and any bought messages) ran out.
+  function onLimit(ev) {
+    renderQuota(ev.quota);
+    const p = ev.client_id ? pending.get(ev.client_id) : null;
+    if (p) {
+      p.el.remove();
+      pending.delete(ev.client_id);
+      if (els.input && !els.input.value.trim()) {      // give the text back so it isn't lost
+        els.input.value = p.body;
+        autoGrow();
+        updateComposerButtons();
+      }
+    }
+    limitToast(ev.detail);
+  }
+
   function onMessage(ev) {
+    if (ev.quota) renderQuota(ev.quota);
     const info = ev.conversation;
     const m = ev.message;
     let c = convs.get(info.id);
@@ -507,9 +565,12 @@
       method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-CSRFToken': csrfToken() },
     })
       .then((r) => r.json().catch(() => ({})).then((d) => {
+        if (d.quota) renderQuota(d.quota);
+        if (r.status === 402) { limitToast(d.error); return false; }   // daily limit reached
         if (!r.ok) throw new Error(d.error || 'Could not send.');
+        return true;
       }))
-      .catch((e) => toast(e.message || 'Could not send. Check your connection.'))
+      .catch((e) => { toast(e.message || 'Could not send. Check your connection.'); return false; })
       .finally(() => els.form.classList.remove('busy'));
   }
 
@@ -530,7 +591,7 @@
     if (!file) return;
     if (!file.type.startsWith('image/')) { toast('Please choose an image.'); return; }
     shrinkImage(file).then((blob) => uploadFile(blob, 'image', 'photo.jpg', els.input.value.trim()))
-      .then(() => { els.input.value = ''; autoGrow(); updateComposerButtons(); });
+      .then((ok) => { if (ok) { els.input.value = ''; autoGrow(); updateComposerButtons(); } });
   }
 
   // Voice recording (MediaRecorder; needs https or localhost for the microphone).
@@ -597,6 +658,7 @@
 
   // -------------------------------------------------------------------- init
   renderSidebar();
+  renderQuota(cfg.quota);
 
   if (active) {
     els.peerAvatar.replaceWith(avatarEl(active));

@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Chatly · Private chat for the people you love{% endblock %}
+{% block body_class %}landing{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/landing.css' %}">{% endblock %}
+
+{% block content %}
+<header class="lp-nav">
+  <a class="lp-brand" href="{% url 'home' %}" aria-label="Chatly home">
+    <span class="lp-logo">💖</span>
+    <span class="lp-brand-name">Chatly</span>
+  </a>
+  <nav class="lp-links" aria-label="Page sections">
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#faq">FAQ</a>
+  </nav>
+  <div class="lp-actions">
+    <a class="lp-login" href="{% url 'login' %}">Log in</a>
+    <a class="btn btn-primary" href="{% url 'signup' %}">Sign up free</a>
+  </div>
+</header>
+
+<main class="lp">
+  <!-- ============================ Hero ============================ -->
+  <section class="lp-hero lp-wrap">
+    <div class="lp-hero-copy">
+      <h1>A private chat for the people who matter most.</h1>
+      <p class="lp-lead">Chatly is a real-time messenger for you and your people. Share your link, they join, and you're talking — with text, voice notes and photos.</p>
+      <div class="lp-cta">
+        <a class="btn btn-primary btn-lg" href="{% url 'signup' %}">Create free account</a>
+        <a class="btn btn-lg lp-ghost" href="{% url 'login' %}">I already have an account</a>
+      </div>
+      <p class="lp-fine">Free every day: {{ limits.text }} text messages, {{ limits.voice }} voice messages and {{ limits.image }} photos. No card needed.</p>
+    </div>
+
+    <div class="lp-phone" aria-hidden="true">
+      <div class="lp-phone-top">
+        <span class="lp-phone-avatar">A</span>
+        <div><strong>Asha</strong><small>online</small></div>
+      </div>
+      <div class="lp-thread">
+        <p class="in" style="--i:0">Did you reach home? 🏡</p>
+        <p class="out" style="--i:1">Just now. Missing you already 💕</p>
+        <div class="in lp-voice" style="--i:2">
+          <span class="lp-play">▶</span>
+          <span class="lp-wave"><i style="--h:40%"></i><i style="--h:70%"></i><i style="--h:50%"></i><i style="--h:90%"></i><i style="--h:60%"></i><i style="--h:35%"></i><i style="--h:80%"></i><i style="--h:55%"></i><i style="--h:30%"></i><i style="--h:65%"></i></span>
+          <time>0:14</time>
+        </div>
+        <div class="out lp-photo" style="--i:3"><span>📸</span>Sunset from the balcony</div>
+        <p class="in" style="--i:4">Beautiful. Call me tonight? 💗</p>
+      </div>
+      <div class="lp-phone-foot">
+        <span>💬 {{ limits.text }}</span><span>🎤 {{ limits.voice }}</span><span>📸 {{ limits.image }}</span>
+        <em>free every day</em>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================== Features ========================== -->
+  <section id="features" class="lp-section lp-wrap">
+    <h2 class="lp-h2">Everything you need to stay close</h2>
+    <p class="lp-sub">Simple on purpose: one-to-one chats that feel instant and personal, without the noise.</p>
+    <div class="lp-features">
+      <article>
+        <span class="lp-icon">💬</span>
+        <h3>Live messages</h3>
+        <p>Messages arrive the moment they're sent, with typing indicators and read ticks so you know they've seen it.</p>
+      </article>
+      <article>
+        <span class="lp-icon">🎤</span>
+        <h3>Voice notes</h3>
+        <p>Some things sound better out loud. Tap the mic, say it, send it.</p>
+      </article>
+      <article>
+        <span class="lp-icon">📸</span>
+        <h3>Photos</h3>
+        <p>Share a moment with an optional caption. Large photos are shrunk automatically so they send fast.</p>
+      </article>
+      <article>
+        <span class="lp-icon">💌</span>
+        <h3>One personal link</h3>
+        <p>Send your invite link to anyone. When they sign up or log in, you're connected and the chat opens for both of you.</p>
+      </article>
+      <article>
+        <span class="lp-icon">💞</span>
+        <h3>Real profiles</h3>
+        <p>A photo, a name and a line about you, so you always know who you're talking to.</p>
+      </article>
+      <article>
+        <span class="lp-icon">🔒</span>
+        <h3>Just the two of you</h3>
+        <p>Every chat belongs to exactly two people. Nobody else in the app can open it.</p>
+      </article>
+      <article>
+        <span class="lp-icon">✨</span>
+        <h3>People you may love to meet</h3>
+        <p>Every day we suggest new people for you: women see men, men see women. Free accounts get 5 suggestions, paid accounts get more.</p>
+      </article>
+      <article>
+        <span class="lp-icon">💗</span>
+        <h3>Chat requests</h3>
+        <p>Like someone's profile? Send a request. When they accept, your private chat opens instantly.</p>
+      </article>
+      <article>
+        <span class="lp-icon">🔔</span>
+        <h3>Notification bell</h3>
+        <p>A little bell tells you when someone sends a request, accepts yours or writes to you, with a count until you've seen it.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ========================= How it works ======================= -->
+  <section id="how" class="lp-section lp-wrap">
+    <h2 class="lp-h2">Chatting in three steps</h2>
+    <ol class="lp-steps">
+      <li>
+        <h3>Create your account</h3>
+        <p>Sign up with your phone number or email. It takes less than a minute.</p>
+      </li>
+      <li>
+        <h3>Share your invite link</h3>
+        <p>Copy it from your home page, or send it straight to WhatsApp, SMS or email.</p>
+      </li>
+      <li>
+        <h3>Start talking</h3>
+        <p>As soon as they join, you're connected and the conversation is ready.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ============================ Pricing ========================= -->
+  <section id="pricing" class="lp-section lp-wrap">
+    <h2 class="lp-h2">Free every day. Pay only if you want more.</h2>
+    <p class="lp-sub">Everyone gets a fresh set of free messages each day. If you need more, buy a pack whenever you like.</p>
+
+    <div class="lp-pricing">
+      <div class="lp-free">
+        <h3>Free plan</h3>
+        <dl>
+          <div><dt>{{ limits.text }}</dt><dd>text messages a day</dd></div>
+          <div><dt>{{ limits.voice }}</dt><dd>voice messages a day</dd></div>
+          <div><dt>{{ limits.image }}</dt><dd>photos a day</dd></div>
+        </dl>
+        <p>Resets every day at {{ reset_label }}.</p>
+        <a class="btn lp-white" href="{% url 'signup' %}">Start for free</a>
+      </div>
+
+      <div class="lp-packs">
+        <h3>Need more? Buy a pack</h3>
+        <ul>
+          {% for p in packs %}
+          <li>
+            <div>
+              <strong>{{ p.name }}</strong>{% if p.popular %} <span class="lp-badge">Most chosen</span>{% endif %}
+              <small>{{ p.text }} text · {{ p.voice }} voice · {{ p.image }} photos</small>
+            </div>
+            <span class="lp-price">{{ p.price_text }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        <p class="lp-note">Bought messages never expire. They're used only after your free messages for the day run out.</p>
+        <a class="btn btn-primary" href="{% url 'signup' %}">Sign up to buy</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== FAQ =========================== -->
+  <section id="faq" class="lp-section lp-wrap lp-faq">
+    <h2 class="lp-h2">Questions, answered</h2>
+    <details>
+      <summary>What counts toward the daily limit?</summary>
+      <p>Each text message, voice message and photo you send counts once. Receiving messages never counts, and you can read your chats as much as you like.</p>
+    </details>
+    <details>
+      <summary>When does the limit reset?</summary>
+      <p>Every day at {{ reset_label }}. Unused free messages don't carry over to the next day.</p>
+    </details>
+    <details>
+      <summary>Do bought messages expire?</summary>
+      <p>No. They stay in your account until you use them, and they're only used after your free messages for the day are gone.</p>
+    </details>
+    <details>
+      <summary>How do I pay?</summary>
+      <p>Payments are handled by Razorpay, so you can pay with UPI, cards or netbanking. Your messages are added as soon as the payment goes through.</p>
+    </details>
+    <details>
+      <summary>Who can see my chats?</summary>
+      <p>Only you and the person you're chatting with.</p>
+    </details>
+  </section>
+
+  <!-- ============================ Final CTA ======================= -->
+  <section class="lp-wrap">
+    <div class="lp-final">
+      <h2>Your people are one link away.</h2>
+      <p>Create your free account and send your first invite today.</p>
+      <a class="btn btn-primary btn-lg" href="{% url 'signup' %}">Create free account</a>
+    </div>
+  </section>
+</main>
+
+<footer class="lp-footer lp-wrap">
+  <span><strong>Chatly</strong> 💖 © {% now "Y" %}</span>
+  <span><a href="{% url 'login' %}">Log in</a> · <a href="{% url 'signup' %}">Sign up</a></span>
+</footer>
+{% endblock %}
