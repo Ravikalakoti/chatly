@@ -86,7 +86,7 @@
         description: order.description,
         order_id: order.order_id,
         prefill: order.prefill,
-        theme: { color: '#ee4a7c' },
+        theme: { color: '#6d5df6' },
         handler: function (response) {
           say('Confirming your payment…');
           post(cfg.verifyUrl, response).then(paid).catch(function (e) {
