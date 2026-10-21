@@ -216,3 +216,8 @@ CREDIT_PACKS = [
 RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
 RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "")
+
+
+# --- Development-phase notice (popup shown once on a user's first visit to the home page) ---
+DEV_CONTACT_NAME = os.environ.get("DEV_CONTACT_NAME", "Ravi")
+DEV_CONTACT_EMAIL = os.environ.get("DEV_CONTACT_EMAIL", "ravikalakoti16@gmail.com")

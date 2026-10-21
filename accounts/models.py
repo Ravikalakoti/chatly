@@ -42,6 +42,9 @@ class User(AbstractUser):
         null=True
     )
 
+    # Set once the person has closed the "we're in development" welcome popup.
+    seen_dev_notice = models.BooleanField(default=False)
+
     REQUIRED_FIELDS = ["email", "display_name"]
 
     def save(self, *args, **kwargs):

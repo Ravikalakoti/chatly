@@ -1,4 +1,6 @@
+from django.conf import settings
 from django.contrib import messages
+from django.http import JsonResponse
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
@@ -69,6 +71,9 @@ def home(request):
             "recommended_limit": suggestion_limit,
             "needs_gender": request.user.gender not in ("male", "female"),
             "chat_requests": incoming_requests(request.user),
+            "show_dev_notice": not request.user.seen_dev_notice,
+            "dev_contact_name": settings.DEV_CONTACT_NAME,
+            "dev_contact_email": settings.DEV_CONTACT_EMAIL,
         },
     )
 
@@ -159,3 +164,11 @@ def profile_detail(request, user_id):
         "accounts/profile_detail.html",
         {"person": person, "conversation": conversation}
     )
+
+
+@login_required
+@require_POST
+def dev_notice_seen(request):
+    """The welcome popup was closed: never show it to this person again."""
+    User.objects.filter(pk=request.user.pk).update(seen_dev_notice=True)
+    return JsonResponse({"ok": True})

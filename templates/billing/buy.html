@@ -14,6 +14,8 @@
     <p>Every day you get {{ limits.text }} free text messages, {{ limits.voice }} voice messages and {{ limits.image }} photos. When those run out, a pack keeps you chatting. Bought messages never expire.</p>
   </section>
 
+  <p class="buy-banner buy-banner-warn">🚧 Payments are not live yet. This page is only a UI preview while we're in development, so nothing is charged. Questions? Contact Ravi at ravikalakoti16@gmail.com</p>
+
   {% if demo_mode %}
     <p class="buy-banner">Test mode: payments are simulated, so no real money is charged. Add your Razorpay keys to go live.</p>
   {% elif not payments_enabled %}
