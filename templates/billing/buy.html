@@ -6,16 +6,7 @@
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/billing.css' %}">{% endblock %}
 
 {% block content %}
-<header class="topbar">
-  <a class="brand" href="{% url 'home' %}">
-    <span class="brand-logo">💖</span>
-    <span class="brand-name">Chatly</span>
-  </a>
-  <div class="topbar-right">
-    <a class="btn btn-ghost" href="{% url 'dashboard' %}">Back to chats</a>
-    <a href="{% url 'profile' %}" title="My profile">{% include "accounts/_avatar.html" with u=request.user %}</a>
-  </div>
-</header>
+{% include "accounts/_nav.html" with active="buy" %}
 
 <main class="buy-wrap">
   <section class="buy-head">

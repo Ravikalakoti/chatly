@@ -3,15 +3,7 @@
 {% block body_class %}love-page{% endblock %}
 
 {% block content %}
-<header class="topbar">
-  <a class="brand" href="{% url 'home' %}">
-    <span class="brand-logo">💖</span>
-    <span class="brand-name">Chatly</span>
-  </a>
-  <div class="topbar-right">
-    <a class="btn btn-ghost" href="{% url 'dashboard' %}">← Chats</a>
-  </div>
-</header>
+{% include "accounts/_nav.html" with active="profile" %}
 
 <main class="profile-wrap">
   <form class="profile-card profile-form" method="post" enctype="multipart/form-data">

@@ -1,0 +1,41 @@
+{% comment %}
+Top navigation + mobile bottom tab bar for logged-in "love" pages.
+Usage: {% include "accounts/_nav.html" with active="home" %}   (active: home | discover | chats | invite | profile | buy)
+{% endcomment %}{% load static %}
+<header class="topbar">
+  <a class="brand" href="{% url 'home' %}">
+    <span class="brand-logo">💖</span>
+    <span class="brand-name">Chatly</span>
+  </a>
+
+  <nav class="topnav" aria-label="Main">
+    <a href="{% url 'home' %}" class="{% if active == 'home' %}on{% endif %}"><span class="ni">🏠</span>Home</a>
+    <a href="{% url 'home' %}#discover" class="{% if active == 'discover' %}on{% endif %}"><span class="ni">✨</span>Discover</a>
+    <a href="{% url 'dashboard' %}" class="{% if active == 'chats' %}on{% endif %}"><span class="ni">💬</span>Chats{% if nav_unread %}<em class="nbadge">{% if nav_unread > 99 %}99+{% else %}{{ nav_unread }}{% endif %}</em>{% endif %}</a>
+    <a href="{% url 'home' %}#invite" class="{% if active == 'invite' %}on{% endif %}"><span class="ni">💌</span>Invite</a>
+  </nav>
+
+  <div class="topbar-right">
+    {% include "accounts/_bell.html" %}
+    <details class="user-menu">
+      <summary aria-label="Account menu">{% include "accounts/_avatar.html" with u=request.user %}</summary>
+      <div class="user-menu-panel">
+        <div class="um-head"><b>{{ request.user.name }}</b><small>{{ request.user.email|default:request.user.phone }}</small></div>
+        <a href="{% url 'profile' %}">👤 My profile</a>
+        <a href="{% url 'pricing' %}">💳 Buy messages</a>
+        <a href="{% url 'dashboard' %}">💬 My chats</a>
+        <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">🚪 Log out</button></form>
+      </div>
+    </details>
+  </div>
+</header>
+
+<nav class="tabbar" aria-label="Main">
+  <a href="{% url 'home' %}" class="{% if active == 'home' %}on{% endif %}"><span>🏠</span><small>Home</small></a>
+  <a href="{% url 'home' %}#discover" class="{% if active == 'discover' %}on{% endif %}"><span>✨</span><small>Discover</small></a>
+  <a href="{% url 'dashboard' %}" class="tab-main"><span>💬{% if nav_unread %}<em class="nbadge">{% if nav_unread > 99 %}99+{% else %}{{ nav_unread }}{% endif %}</em>{% endif %}</span><small>Chats</small></a>
+  <a href="{% url 'home' %}#invite" class="{% if active == 'invite' %}on{% endif %}"><span>💌</span><small>Invite</small></a>
+  <a href="{% url 'profile' %}" class="{% if active == 'profile' %}on{% endif %}"><span>👤</span><small>Profile</small></a>
+</nav>
+<script src="{% static 'js/nav.js' %}" defer></script>
+<script src="{% static 'js/bell.js' %}" defer></script>

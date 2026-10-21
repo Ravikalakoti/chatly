@@ -6,20 +6,7 @@
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/billing.css' %}">{% endblock %}
 
 {% block content %}
-<header class="topbar">
-  <a class="brand" href="{% url 'home' %}">
-    <span class="brand-logo">💖</span>
-    <span class="brand-name">Chatly</span>
-  </a>
-  <div class="topbar-right">
-    {% include "accounts/_bell.html" %}
-    <a href="{% url 'profile' %}" title="My profile">{% include "accounts/_avatar.html" with u=request.user %}</a>
-    <form method="post" action="{% url 'logout' %}">
-      {% csrf_token %}
-      <button type="submit" class="btn btn-ghost">Log out</button>
-    </form>
-  </div>
-</header>
+{% include "accounts/_nav.html" with active="home" %}
 
 <main class="love-home">
   <section class="hero">
@@ -114,7 +101,7 @@
     {% endif %}
   </section>
 
-  <section class="love-card">
+  <section class="love-card" id="invite">
     <h2>💌 Invite someone special</h2>
     <p class="muted">Send your personal link to your partner, best friend or family. The moment they join, you two are connected and the chat is ready.</p>
 
@@ -147,16 +134,11 @@
     <li><span>💞</span>Profiles<small>Know your people</small></li>
   </ul>
 
-  <div class="cta-row">
-    <a class="btn btn-primary btn-lg" href="{% url 'dashboard' %}">Open my chats 💬</a>
-    <a class="btn btn-ghost btn-lg" href="{% url 'profile' %}">My profile 💗</a>
-  </div>
 </main>
 {% endblock %}
 
 {% block extra_js %}
 <script src="{% static 'js/home.js' %}"></script>
-<script src="{% static 'js/bell.js' %}"></script>
 <script src="{% static 'js/discover.js' %}"></script>
 <script>
   // A new love note every few seconds
