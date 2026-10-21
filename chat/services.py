@@ -6,11 +6,13 @@ from django.db.models import Case, Count, IntegerField, OuterRef, Q, Subquery, V
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.timesince import timesince
 
 from billing.limits import recommended_limit
 
-from .models import ChatRequest, Conversation, Message
+from .models import ChatRequest, Conversation, Message, Notification
 from .payloads import conversation_info, message_payload, preview_text
 
 logger = logging.getLogger(__name__)
@@ -140,6 +142,8 @@ def recommended_profiles(user):
     for person in people:
         person.request_sent = person.pk in sent
         dob = person.date_of_birth
+        person.is_new = (timezone.now() - person.date_joined).days < 7
+        person.active_now = bool(person.last_login and (timezone.now() - person.last_login).total_seconds() < 24 * 3600)
         person.age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day)) if dob else None
     return people, limit
 
@@ -189,3 +193,45 @@ def answer_chat_request(user, request_id, accept):
     if accept:
         return connect_users(user, req.sender)[0]
     return None
+
+
+# ---------------------------------------------------------------- notifications (bell)
+def unseen_count(user):
+    return Notification.objects.filter(user=user, seen_at__isnull=True).count()
+
+
+def mark_conversation_notifications_seen(user, conversation_id):
+    """Opening / reading a chat clears its message notifications."""
+    Notification.objects.filter(
+        user=user, kind=Notification.MESSAGE, conversation_id=conversation_id, seen_at__isnull=True
+    ).update(seen_at=timezone.now())
+
+
+def notification_payload(user, limit=15):
+    items = []
+    for n in Notification.objects.filter(user=user).select_related("actor")[:limit]:
+        who = n.actor.name
+        if n.kind == Notification.REQUEST:
+            text, url = f"{who} sent you a chat request 💌", reverse("home") + "#requests"
+        elif n.kind == Notification.ACCEPTED:
+            text = f"{who} accepted your request 💗"
+            conv = conversations_for(user).filter(
+                user_a_id__in=[user.pk, n.actor_id], user_b_id__in=[user.pk, n.actor_id]
+            ).first()
+            url = reverse("chat", args=[conv.pk]) if conv else reverse("home")
+        else:
+            text = f"{who} sent you {n.count} new message{'s' if n.count != 1 else ''} 💬"
+            url = reverse("chat", args=[n.conversation_id]) if n.conversation_id else reverse("dashboard")
+        items.append(
+            {
+                "id": n.pk,
+                "text": text,
+                "url": url,
+                "seen": n.seen_at is not None,
+                "ago": timesince(n.updated_at).split(",")[0] + " ago",
+                "avatar": n.actor.avatar_url,
+                "initial": n.actor.initial,
+                "color": n.actor.avatar_index,
+            }
+        )
+    return {"unseen": unseen_count(user), "items": items}

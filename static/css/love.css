@@ -186,17 +186,79 @@ main, .app { position: relative; z-index: 1; }
   .love-bg span, .love-page *, .profile-cover::before, .profile-cover::after { animation: none !important; transition: none !important; }
 }
 
-/* ---------- Recommended people (home page) ---------- */
-.crush-card h2 .crush-count { display: inline-block; min-width: 26px; padding: 0 8px; margin-left: 6px; border-radius: 999px; background: var(--love-grad); color: #fff; font-size: .9rem; text-align: center; vertical-align: middle; }
-.crush-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; margin-top: 20px; }
-.crush { position: relative; display: flex; flex-direction: column; align-items: center; padding: 22px 16px 18px; border-radius: 22px; text-align: center; background: linear-gradient(160deg, #fff, var(--rose-50)); border: 1px solid var(--rose-100); box-shadow: 0 8px 24px rgba(238, 74, 124, .1); transition: transform .25s, box-shadow .25s; animation: fade-up .7s ease both; }
-.crush:hover { transform: translateY(-5px); box-shadow: 0 16px 34px rgba(238, 74, 124, .2); }
-.crush::after { content: "💗"; position: absolute; top: 10px; right: 12px; font-size: 16px; opacity: .55; }
-.crush .avatar { margin-bottom: 12px; }
-.crush h3 { margin: 0 0 4px; font-size: 1.05rem; color: var(--rose-700); overflow-wrap: anywhere; }
-.crush h3 span { font-weight: 600; color: var(--muted); }
-.crush p { flex: 1; margin: 0 0 14px; color: var(--muted); font-size: .85rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.crush form { margin: 0; }
-.crush .btn { min-height: 40px; padding: 0 16px; font-size: .85rem; }
-.crush .btn[disabled] { opacity: .65; cursor: default; transform: none; }
-.crush-actions { display: flex; gap: 8px; }
+
+/* ---------- Discover: people you may love to meet (home page) ---------- */
+.discover-card { overflow: hidden; }
+.discover-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.discover-pill { flex: none; padding: 5px 12px; border-radius: 999px; background: var(--rose-100); color: var(--rose-600); font-size: .78rem; font-weight: 800; white-space: nowrap; }
+.discover-wrap { position: relative; margin: 18px -26px 0; }
+.discover-track { display: flex; gap: 16px; padding: 6px 26px 22px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 26px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.discover-track::-webkit-scrollbar { display: none; }
+.discover-arrow { position: absolute; top: 40%; z-index: 3; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; color: var(--rose-600); background: rgba(255, 255, 255, .95); box-shadow: 0 6px 20px rgba(176, 26, 75, .25); cursor: pointer; font-size: 22px; line-height: 1; transition: transform .2s, opacity .2s; }
+.discover-arrow:hover { transform: scale(1.1); }
+.discover-arrow[hidden] { display: none; }
+.discover-arrow.prev { left: 8px; }
+.discover-arrow.next { right: 8px; }
+@media (hover: none) { .discover-arrow { display: none; } }
+
+.pcard { flex: 0 0 214px; scroll-snap-align: start; display: flex; flex-direction: column; overflow: hidden; border-radius: 24px; background: #fff; border: 1px solid var(--rose-100); box-shadow: 0 10px 28px rgba(238, 74, 124, .14); transition: transform .3s, box-shadow .3s, opacity .35s; animation: fade-up .6s ease both; }
+.pcard:hover { transform: translateY(-5px); box-shadow: 0 18px 40px rgba(238, 74, 124, .25); }
+.pcard.leaving { opacity: 0; transform: scale(.85); }
+.pcard-photo { position: relative; height: 230px; overflow: hidden; background: linear-gradient(160deg, var(--rose-300), var(--rose-500)); }
+.pcard-photo img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .5s; }
+.pcard:hover .pcard-photo img { transform: scale(1.06); }
+.pcard-initial { position: absolute; inset: 0; display: grid; place-items: center; color: rgba(255, 255, 255, .92); font-family: var(--script); font-size: 6.2rem; font-weight: 700; text-shadow: 0 6px 24px rgba(176, 26, 75, .4); }
+.pcard-shade { position: absolute; inset: auto 0 0 0; height: 62%; background: linear-gradient(to top, rgba(61, 26, 40, .78), transparent); }
+.pcard-badges { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 6px; z-index: 2; }
+.pcard-badge { padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, .92); color: var(--rose-600); font-size: .7rem; font-weight: 800; box-shadow: 0 3px 10px rgba(0, 0, 0, .1); }
+.pcard-badge.online::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: #25c26e; }
+.pcard-title { position: absolute; left: 14px; right: 14px; bottom: 12px; z-index: 2; color: #fff; }
+.pcard-title h3 { margin: 0; font-size: 1.2rem; font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; text-shadow: 0 2px 8px rgba(0, 0, 0, .35); }
+.pcard-title h3 span { font-weight: 600; }
+.pcard-body { display: flex; flex: 1; flex-direction: column; gap: 12px; padding: 14px 14px 16px; }
+.pcard-about { flex: 1; margin: 0; color: var(--muted); font-size: .86rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.6em; }
+.pcard-actions { display: flex; align-items: center; gap: 8px; }
+.pcard-actions form { margin: 0; flex: 1; display: flex; }
+.pcard-actions .pcard-main { flex: 1; min-height: 44px; padding: 0 10px; border-radius: 14px; font-size: .9rem; }
+.pcard-skip { flex: none; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--rose-200); border-radius: 14px; color: var(--muted); background: #fff; cursor: pointer; font-size: 16px; transition: background .2s, color .2s; }
+.pcard-skip:hover { color: var(--rose-600); background: var(--rose-100); }
+.pcard-main.done { color: var(--rose-600); background: var(--rose-100); border: 1px solid var(--rose-200); box-shadow: none; pointer-events: none; animation: bell-pop .4s ease; }
+.pcard-main.busy { opacity: .7; pointer-events: none; }
+.pcard-link { display: flex; flex: 1; align-items: center; justify-content: center; min-height: 44px; border-radius: 14px; color: #fff; background: var(--love-grad); font-size: .9rem; font-weight: 800; text-decoration: none; }
+
+.discover-empty { margin-top: 18px; padding: 30px 16px; border: 2px dashed var(--rose-200); border-radius: 20px; text-align: center; color: var(--muted); background: var(--rose-50); line-height: 1.7; }
+.discover-empty b { display: block; margin-bottom: 4px; font-size: 2.2rem; }
+.discover-empty a { font-weight: 800; }
+
+.heart-burst { position: fixed; z-index: 100; pointer-events: none; font-size: 22px; animation: heart-burst 1s ease-out forwards; }
+@keyframes heart-burst { 0% { opacity: 1; transform: translate(0, 0) scale(.6); } 100% { opacity: 0; transform: translate(var(--dx), -90px) scale(1.4); } }
+
+@media (max-width: 520px) {
+  .discover-wrap { margin: 16px -18px 0; }
+  .discover-track { padding: 6px 18px 20px; scroll-padding: 0 18px; gap: 12px; }
+  .pcard { flex-basis: 70vw; max-width: 250px; }
+  .pcard-photo { height: 240px; }
+  .discover-top { flex-direction: column; gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) { .pcard, .heart-burst { animation: none; } .pcard:hover { transform: none; } }
+
+/* ---------- Notification bell ---------- */
+.bell { position: relative; }
+.bell-btn { position: relative; display: grid; place-items: center; width: 42px; height: 42px; padding: 0; border: 1px solid var(--rose-200); border-radius: 50%; color: var(--rose-600); background: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(238, 74, 124, .18); transition: transform .2s, background .2s, color .2s; }
+.bell-btn:hover { transform: translateY(-2px); color: #fff; background: var(--love-grad); }
+.bell-badge { position: absolute; top: -5px; right: -5px; min-width: 20px; height: 20px; padding: 0 5px; border: 2px solid #fff; border-radius: 999px; color: #fff; background: var(--rose-500); font-size: 11px; font-weight: 800; line-height: 16px; text-align: center; animation: bell-pop .35s ease; }
+.bell-badge[hidden] { display: none; }
+.bell-panel { position: absolute; top: calc(100% + 12px); right: 0; z-index: 30; width: min(360px, 92vw); overflow: hidden; border: 1px solid var(--rose-100); border-radius: 20px; background: #fff; box-shadow: 0 22px 60px rgba(176, 26, 75, .22); animation: fade-up .25s ease both; }
+.bell-panel[hidden] { display: none; }
+.bell-head { padding: 14px 18px; border-bottom: 1px solid var(--rose-100); background: linear-gradient(135deg, var(--rose-50), #fff); font-family: var(--script); font-size: 1.5rem; font-weight: 700; color: var(--rose-600); }
+.bell-list { max-height: 380px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--rose-200) transparent; }
+.bell-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--rose-50); color: var(--wine); text-decoration: none; transition: background .2s; }
+.bell-item:hover { background: var(--rose-50); }
+.bell-item.unseen { background: var(--rose-100); }
+.bell-item .avatar { width: 40px; height: 40px; flex: none; border-radius: 50%; font-size: .95rem; box-shadow: none; }
+.bell-body { display: flex; flex-direction: column; min-width: 0; }
+.bell-text { font-size: .88rem; font-weight: 700; line-height: 1.4; }
+.bell-body small { margin-top: 2px; color: var(--muted); font-size: .75rem; }
+.bell-empty { margin: 0; padding: 26px 18px; color: var(--muted); text-align: center; font-size: .9rem; line-height: 1.6; }
+@keyframes bell-pop { 0% { transform: scale(.3); } 70% { transform: scale(1.25); } 100% { transform: scale(1); } }
+@media (max-width: 520px) { .bell-panel { position: fixed; top: 66px; right: 4vw; left: 4vw; width: auto; } }

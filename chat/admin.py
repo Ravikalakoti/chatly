@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import ChatRequest, Conversation, Message
+from .models import ChatRequest, Conversation, Message, Notification
 
 
 @admin.register(Conversation)
@@ -24,3 +24,10 @@ class ChatRequestAdmin(admin.ModelAdmin):
     list_display = ("id", "sender", "receiver", "status", "created_at")
     list_filter = ("status",)
     raw_id_fields = ("sender", "receiver")
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "kind", "actor", "count", "created_at", "seen_at")
+    list_filter = ("kind",)
+    raw_id_fields = ("user", "actor", "conversation")

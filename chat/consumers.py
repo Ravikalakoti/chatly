@@ -30,7 +30,7 @@ from billing.limits import consume, get_status, limit_message
 
 from .models import Conversation, Message
 from .payloads import conversation_info, message_payload
-from .services import conversations_for, user_group
+from .services import conversations_for, mark_conversation_notifications_seen, user_group
 
 MAX_BODY_LENGTH = 4000
 LIMIT_REACHED = "limit"
@@ -194,4 +194,5 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         newest = unread.order_by("-id").values_list("id", flat=True).first()
         if newest is not None:
             unread.update(read_at=timezone.now())
+        mark_conversation_notifications_seen(self.user, conversation.pk)
         return conversation, newest

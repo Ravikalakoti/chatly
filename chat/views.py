@@ -1,18 +1,21 @@
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.contrib import messages
+from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET
 import uuid
 from PIL import Image, UnidentifiedImageError
-from .models import Conversation, Message
+from .models import Conversation, Message, Notification
 from .services import (
     answer_chat_request,
     broadcast_message,
     conversation_summaries,
     conversations_for,
+    mark_conversation_notifications_seen,
+    notification_payload,
     send_chat_request,
 )
 
@@ -55,6 +58,7 @@ def dashboard(request, conversation_id=None):
         active = get_object_or_404(
             conversations_for(request.user).select_related("user_a", "user_b"), pk=conversation_id
         )
+        mark_conversation_notifications_seen(request.user, active.pk)
         page, has_more = _message_page(active)
         initial_messages = [message_payload(m) for m in page]
 
@@ -85,16 +89,23 @@ def dashboard(request, conversation_id=None):
 def request_send(request, user_id):
     person = get_object_or_404(get_user_model(), pk=user_id, is_active=True)
     state, conversation = send_chat_request(request.user, person)
-    if state == "sent":
-        messages.success(request, f"Request sent to {person.name} 💌")
-    elif state == "already_sent":
-        messages.info(request, f"You already sent a request to {person.name}.")
-    elif state == "connected":
-        messages.success(request, f"{person.name} had already asked you. You're now connected!")
-    elif state == "exists":
-        messages.info(request, f"You're already connected with {person.name}.")
-    else:
-        messages.error(request, "You can't send a request to this person.")
+    texts = {
+        "sent": (messages.SUCCESS, f"Request sent to {person.name} 💌"),
+        "already_sent": (messages.INFO, f"You already sent a request to {person.name}."),
+        "connected": (messages.SUCCESS, f"{person.name} had already asked you. You're now connected!"),
+        "exists": (messages.INFO, f"You're already connected with {person.name}."),
+    }
+    level, text = texts.get(state, (messages.ERROR, "You can't send a request to this person."))
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":  # the home page sends it without reloading
+        return JsonResponse(
+            {
+                "ok": state in texts,
+                "state": state,
+                "message": text,
+                "chat_url": reverse("chat", args=[conversation.pk]) if conversation else "",
+            }
+        )
+    messages.add_message(request, level, text)
     if conversation is not None:
         return redirect("chat", conversation_id=conversation.pk)
     return redirect("home")
@@ -201,3 +212,19 @@ def attach_api(request, conversation_id):
     quota = get_status(request.user)
     broadcast_message(conversation, message, request.user, client_id, quota=quota)
     return JsonResponse({"ok": True, "id": message.pk, "quota": quota})
+
+
+
+@login_required
+@require_GET
+def notifications_api(request):
+    """Bell menu data: how many unseen + the latest notifications."""
+    return JsonResponse(notification_payload(request.user))
+
+
+@login_required
+@require_POST
+def notifications_seen(request):
+    """Opening the bell marks everything as seen (the red number disappears)."""
+    Notification.objects.filter(user=request.user, seen_at__isnull=True).update(seen_at=timezone.now())
+    return JsonResponse({"ok": True, "unseen": 0})
