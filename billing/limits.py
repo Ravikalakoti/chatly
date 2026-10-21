@@ -106,3 +106,12 @@ def add_credits(user, text=0, voice=0, image=0):
         voice_credits=F("voice_credits") + voice,
         image_credits=F("image_credits") + image,
     )
+
+
+def recommended_limit(user):
+    """How many suggested profiles this user may see: `free` count, or `paid` once they have bought a pack."""
+    from .models import Order
+
+    conf = getattr(settings, "RECOMMENDED_PROFILES", {})
+    free, paid = int(conf.get("free", 5)), int(conf.get("paid", 10))
+    return paid if Order.objects.filter(user=user, status=Order.PAID).exists() else free

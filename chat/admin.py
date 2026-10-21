@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Conversation, Message
+from .models import ChatRequest, Conversation, Message
 
 
 @admin.register(Conversation)
@@ -17,3 +17,10 @@ class MessageAdmin(admin.ModelAdmin):
     @admin.display(description="Message")
     def short_body(self, obj):
         return obj.body[:60]
+
+
+@admin.register(ChatRequest)
+class ChatRequestAdmin(admin.ModelAdmin):
+    list_display = ("id", "sender", "receiver", "status", "created_at")
+    list_filter = ("status",)
+    raw_id_fields = ("sender", "receiver")

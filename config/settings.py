@@ -189,6 +189,13 @@ FREE_DAILY_LIMITS = {
     "voice": env_int("FREE_VOICE_PER_DAY", 5),   # audio / voice messages
     "image": env_int("FREE_IMAGES_PER_DAY", 5),  # photos
 }
+# How many "Suggested for you" profiles each user sees in the chat sidebar.
+#   free  -> users who have never bought a pack
+#   paid  -> users with at least one paid order
+RECOMMENDED_PROFILES = {
+    "free": env_int("FREE_RECOMMENDED_PROFILES", 5),
+    "paid": env_int("PAID_RECOMMENDED_PROFILES", 10),
+}
 # The daily counters reset at midnight in this timezone (any name from the IANA list, e.g. "Asia/Kolkata").
 LIMITS_TIMEZONE = os.environ.get("LIMITS_TIMEZONE", "UTC")
 

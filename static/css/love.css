@@ -185,3 +185,18 @@ main, .app { position: relative; z-index: 1; }
 @media (prefers-reduced-motion: reduce) {
   .love-bg span, .love-page *, .profile-cover::before, .profile-cover::after { animation: none !important; transition: none !important; }
 }
+
+/* ---------- Recommended people (home page) ---------- */
+.crush-card h2 .crush-count { display: inline-block; min-width: 26px; padding: 0 8px; margin-left: 6px; border-radius: 999px; background: var(--love-grad); color: #fff; font-size: .9rem; text-align: center; vertical-align: middle; }
+.crush-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; margin-top: 20px; }
+.crush { position: relative; display: flex; flex-direction: column; align-items: center; padding: 22px 16px 18px; border-radius: 22px; text-align: center; background: linear-gradient(160deg, #fff, var(--rose-50)); border: 1px solid var(--rose-100); box-shadow: 0 8px 24px rgba(238, 74, 124, .1); transition: transform .25s, box-shadow .25s; animation: fade-up .7s ease both; }
+.crush:hover { transform: translateY(-5px); box-shadow: 0 16px 34px rgba(238, 74, 124, .2); }
+.crush::after { content: "💗"; position: absolute; top: 10px; right: 12px; font-size: 16px; opacity: .55; }
+.crush .avatar { margin-bottom: 12px; }
+.crush h3 { margin: 0 0 4px; font-size: 1.05rem; color: var(--rose-700); overflow-wrap: anywhere; }
+.crush h3 span { font-weight: 600; color: var(--muted); }
+.crush p { flex: 1; margin: 0 0 14px; color: var(--muted); font-size: .85rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.crush form { margin: 0; }
+.crush .btn { min-height: 40px; padding: 0 16px; font-size: .85rem; }
+.crush .btn[disabled] { opacity: .65; cursor: default; transform: none; }
+.crush-actions { display: flex; gap: 8px; }

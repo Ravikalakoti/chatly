@@ -28,6 +28,54 @@
     <div id="love-quote" class="love-quote">You make every ordinary day feel special 💕</div>
   </section>
 
+  {% if chat_requests %}
+  <section class="love-card crush-card">
+    <h2>💌 Someone likes talking to you <span class="crush-count">{{ chat_requests|length }}</span></h2>
+    <p class="muted">These people sent you a chat request. Accept to start chatting.</p>
+    <div class="crush-grid">
+      {% for r in chat_requests %}
+      <article class="crush">
+        {% include "accounts/_avatar.html" with u=r.sender size="xl" %}
+        <h3>{{ r.sender.name }}</h3>
+        <p>{{ r.sender.about|default:"Hey there! I am using Chatly 💕" }}</p>
+        <div class="crush-actions">
+          <form method="post" action="{% url 'request_accept' r.pk %}">{% csrf_token %}<button class="btn btn-primary" type="submit">Accept 💗</button></form>
+          <form method="post" action="{% url 'request_decline' r.pk %}">{% csrf_token %}<button class="btn btn-ghost" type="submit" aria-label="Decline">✕</button></form>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="love-card crush-card">
+    <h2>✨ People you may love to meet</h2>
+    {% if needs_gender %}
+      <p class="muted">Add your gender in <a href="{% url 'profile' %}">your profile</a> and we'll find lovely people for you 💕</p>
+    {% elif recommended %}
+      <p class="muted">Say hello with a request. If they accept, your chat opens instantly.</p>
+      <div class="crush-grid">
+        {% for u in recommended %}
+        <article class="crush">
+          {% include "accounts/_avatar.html" with u=u size="xl" %}
+          <h3>{{ u.name }}{% if u.age %}<span>, {{ u.age }}</span>{% endif %}</h3>
+          <p>{{ u.about|default:"Hey there! I am using Chatly 💕" }}</p>
+          <form method="post" action="{% url 'request_send' u.pk %}">
+            {% csrf_token %}
+            {% if u.request_sent %}
+              <button class="btn btn-ghost" type="button" disabled>Request sent 💌</button>
+            {% else %}
+              <button class="btn btn-primary" type="submit">Send request 💗</button>
+            {% endif %}
+          </form>
+        </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">No new people right now. Check back soon, new hearts join every day 💞</p>
+    {% endif %}
+  </section>
+
   <section class="love-card">
     <h2>💌 Invite someone special</h2>
     <p class="muted">Send your personal link to your partner, best friend or family. The moment they join, you two are connected and the chat is ready.</p>

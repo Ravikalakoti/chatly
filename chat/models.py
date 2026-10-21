@@ -31,6 +31,28 @@ class Conversation(models.Model):
     def __str__(self):
         return f"{self.user_a} ↔ {self.user_b}"
 
+class ChatRequest(models.Model):
+    """'I'd like to chat with you.' Becomes a Conversation once the receiver accepts."""
+
+    PENDING, ACCEPTED, DECLINED = "pending", "accepted", "declined"
+    STATUSES = [(PENDING, "Pending"), (ACCEPTED, "Accepted"), (DECLINED, "Declined")]
+
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="requests_sent")
+    receiver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="requests_received")
+    status = models.CharField(max_length=10, choices=STATUSES, default=PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["sender", "receiver"], name="unique_chat_request_pair"),
+            models.CheckConstraint(condition=~Q(sender=F("receiver")), name="chat_request_not_self"),
+        ]
+
+    def __str__(self):
+        return f"{self.sender} → {self.receiver} ({self.status})"
+
+
 def attachment_path(instance, filename):
     """Random file name, so a media URL can't be guessed."""
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else "bin"

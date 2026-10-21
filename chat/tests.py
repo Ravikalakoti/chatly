@@ -181,3 +181,63 @@ class LimitConsumerTests(TransactionTestCase):
             self.assertEqual(await database_sync_to_async(Message.objects.count)(), 1)
             await ca.disconnect()
             await cb.disconnect()
+
+
+class DiscoverAndRequestTests(TestCase):
+    def setUp(self):
+        def mk(name, email, gender):
+            u = make_user(name, email)
+            u.gender = gender
+            u.save()
+            return u
+
+        self.man = mk("Man", "m@x.com", "male")
+        self.women = [mk(f"W{i}", f"w{i}@x.com", "female") for i in range(8)]
+        self.men2 = mk("M2", "m2@x.com", "male")
+
+    def test_free_user_sees_five_opposite_gender(self):
+        from .services import recommended_profiles
+
+        people, limit = recommended_profiles(self.man)
+        self.assertEqual(limit, 5)
+        self.assertEqual(len(people), 5)
+        self.assertTrue(all(p.gender == "female" for p in people))
+
+    @override_settings(RECOMMENDED_PROFILES={"free": 2, "paid": 10})
+    def test_limit_follows_setting_and_paid_orders(self):
+        from billing.models import Order
+        from .services import recommended_profiles
+
+        self.assertEqual(len(recommended_profiles(self.man)[0]), 2)
+        Order.objects.create(user=self.man, pack_id="plus", amount_minor=9900, status=Order.PAID)
+        self.assertEqual(len(recommended_profiles(self.man)[0]), 8)
+
+    def test_same_gender_request_blocked(self):
+        from .services import send_chat_request
+
+        self.assertEqual(send_chat_request(self.man, self.men2)[0], "forbidden")
+
+    def test_request_accept_creates_conversation(self):
+        from .models import ChatRequest
+        from .services import answer_chat_request, send_chat_request
+
+        woman = self.women[0]
+        self.assertEqual(send_chat_request(self.man, woman)[0], "sent")
+        self.assertEqual(send_chat_request(self.man, woman)[0], "already_sent")
+        req = ChatRequest.objects.get()
+        self.assertIsNone(answer_chat_request(self.man, req.pk, True))  # only receiver can answer
+        conv = answer_chat_request(woman, req.pk, True)
+        self.assertTrue(conv.includes(self.man) and conv.includes(woman))
+
+    def test_declined_cannot_resend_and_dashboard_renders(self):
+        from .models import ChatRequest
+        from .services import answer_chat_request, send_chat_request
+
+        woman = self.women[0]
+        send_chat_request(self.man, woman)
+        answer_chat_request(woman, ChatRequest.objects.get().pk, False)
+        self.assertEqual(send_chat_request(self.man, woman)[0], "forbidden")
+        self.client.force_login(self.man)
+        self.assertEqual(self.client.get("/chat/").status_code, 200)
+        r = self.client.post(f"/chat/request/send/{self.women[1].pk}/")
+        self.assertEqual(r.status_code, 302)

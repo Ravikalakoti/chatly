@@ -2,9 +2,15 @@ import logging
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-from django.db.models import Count, OuterRef, Q, Subquery
+from django.db.models import Case, Count, IntegerField, OuterRef, Q, Subquery, Value, When
 
-from .models import Conversation, Message
+from django.contrib.auth import get_user_model
+from django.db import transaction
+from django.utils import timezone
+
+from billing.limits import recommended_limit
+
+from .models import ChatRequest, Conversation, Message
 from .payloads import conversation_info, message_payload, preview_text
 
 logger = logging.getLogger(__name__)
@@ -93,3 +99,93 @@ def conversation_summaries(user):
         items.append(info)
     items.sort(key=lambda i: i["last_at"], reverse=True)
     return items
+
+
+# ---------------------------------------------------------------- discover & requests
+OPPOSITE_GENDER = {"male": "female", "female": "male"}
+
+
+def can_request(sender, receiver):
+    """Men can only request women and women only men (other / unset gender: nobody)."""
+    return sender.pk != receiver.pk and OPPOSITE_GENDER.get(sender.gender) == receiver.gender
+
+
+def recommended_profiles(user):
+    """
+    Suggested people for `user`: the opposite gender, never someone already chatting with them
+    or waiting on their answer. Capped by the plan (5 free / 10 paid, see RECOMMENDED_PROFILES).
+    Returns (profiles, limit). Each profile gets `.request_sent` (True if we already asked them).
+    """
+    limit = recommended_limit(user)
+    target = OPPOSITE_GENDER.get(user.gender)
+    if not target or limit <= 0:
+        return [], limit
+
+    chatting = set()
+    for a, b in conversations_for(user).values_list("user_a_id", "user_b_id"):
+        chatting.update((a, b))
+    incoming = set(ChatRequest.objects.filter(receiver=user, status=ChatRequest.PENDING).values_list("sender_id", flat=True))
+    sent = set(ChatRequest.objects.filter(sender=user, status=ChatRequest.PENDING).values_list("receiver_id", flat=True))
+    declined_me = set(ChatRequest.objects.filter(sender=user, status=ChatRequest.DECLINED).values_list("receiver_id", flat=True))
+
+    people = list(
+        get_user_model()
+        .objects.filter(is_active=True, gender=target)
+        .exclude(pk__in=chatting | incoming | declined_me | {user.pk})
+        # people with a photo first, then the most recently active; random order inside each group
+        .annotate(no_photo=Case(When(avatar="", then=Value(1)), default=Value(0), output_field=IntegerField()))
+        .order_by("no_photo", "-last_login", "?")[:limit]
+    )
+    today = timezone.localdate()
+    for person in people:
+        person.request_sent = person.pk in sent
+        dob = person.date_of_birth
+        person.age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day)) if dob else None
+    return people, limit
+
+
+def incoming_requests(user):
+    return ChatRequest.objects.filter(receiver=user, status=ChatRequest.PENDING).select_related("sender")
+
+
+def send_chat_request(sender, receiver):
+    """
+    Returns (state, conversation) where state is one of:
+    "sent", "already_sent", "connected" (they had already asked us -> auto-accepted),
+    "exists" (already chatting), "forbidden" (wrong gender combination).
+    """
+    if not can_request(sender, receiver):
+        return "forbidden", None
+    existing = conversations_for(sender).filter(
+        user_a_id__in=[sender.pk, receiver.pk], user_b_id__in=[sender.pk, receiver.pk]
+    ).first()
+    if existing:
+        return "exists", existing
+    with transaction.atomic():
+        reverse_req = ChatRequest.objects.filter(sender=receiver, receiver=sender, status=ChatRequest.PENDING).first()
+        if reverse_req:
+            reverse_req.status = ChatRequest.ACCEPTED
+            reverse_req.save(update_fields=["status"])
+            conversation, _ = connect_users(sender, receiver)
+            return "connected", conversation
+        req, created = ChatRequest.objects.get_or_create(sender=sender, receiver=receiver)
+        if not created:
+            if req.status == ChatRequest.DECLINED:
+                return "forbidden", None  # they said no; don't allow spamming
+            return "already_sent", None
+    return "sent", None
+
+
+def answer_chat_request(user, request_id, accept):
+    """Receiver accepts (-> conversation) or declines. Returns the conversation or None."""
+    with transaction.atomic():
+        req = ChatRequest.objects.select_for_update().filter(
+            pk=request_id, receiver=user, status=ChatRequest.PENDING
+        ).select_related("sender").first()
+        if req is None:
+            return None
+        req.status = ChatRequest.ACCEPTED if accept else ChatRequest.DECLINED
+        req.save(update_fields=["status"])
+    if accept:
+        return connect_users(user, req.sender)[0]
+    return None

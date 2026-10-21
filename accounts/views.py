@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from billing.catalog import free_limits, packs
 from billing.limits import quota_rows, reset_label
-from chat.services import connect_users, conversations_for
+from chat.services import connect_users, conversations_for, incoming_requests, recommended_profiles
 
 from .forms import LoginForm, SignupForm, ProfileForm
 from .models import User
@@ -57,10 +57,19 @@ def home(request):
             {"limits": free_limits(), "packs": packs(), "reset_label": reset_label()},
         )
     invite_url = request.build_absolute_uri(reverse("invite", args=[request.user.invite_code]))
+    suggestions, suggestion_limit = recommended_profiles(request.user)
     return render(
         request,
         "accounts/home.html",
-        {"invite_url": invite_url, "rows": quota_rows(request.user), "reset_label": reset_label()},
+        {
+            "invite_url": invite_url,
+            "rows": quota_rows(request.user),
+            "reset_label": reset_label(),
+            "recommended": suggestions,
+            "recommended_limit": suggestion_limit,
+            "needs_gender": request.user.gender not in ("male", "female"),
+            "chat_requests": incoming_requests(request.user),
+        },
     )
 
 
