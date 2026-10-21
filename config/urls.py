@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.http import HttpResponse
-from django.urls import include, path
+from django.conf import settings
+from django.urls import include, path, re_path
+from django.views.static import serve
 
 
 def healthz(request):
@@ -13,4 +15,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("accounts.urls")),
     path("", include("chat.urls")),
+    path("", include("billing.urls")),
+    # Serves uploaded profile photos (fine for a small app; use S3/Cloudinary when you grow).
+    re_path(r"^media/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
 ]

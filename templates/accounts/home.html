@@ -1,407 +1,165 @@
-
 {% extends "base.html" %}
 {% load static %}
 
 {% block title %}Home · Chatly{% endblock %}
-{% block body_class %}home-page{% endblock %}
+{% block body_class %}love-page{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/billing.css' %}">{% endblock %}
 
 {% block content %}
+{% include "accounts/_nav.html" with active="home" %}
+{% if show_dev_notice %}{% include "accounts/_dev_notice.html" %}{% endif %}
 
-<style>
-.home-page {
-    min-height: 100vh;
-    background: linear-gradient(-45deg, #ede9fe, #fce7f3, #e0f2fe, #f5f3ff);
-    background-size: 400% 400%;
-    animation: backgroundMove 12s ease infinite;
-    font-family: Arial, sans-serif;
-}
+<main class="love-home">
+  <section class="hero">
+    <div class="hero-heart">💖</div>
+    <h1>Hi {{ request.user.name }}, welcome back</h1>
+    <p class="lead">Every chat is a little love letter. Talk to the people who matter, send a sweet voice note, share a photo, and keep every moment close.</p>
+    <div id="love-quote" class="love-quote">You make every ordinary day feel special 💕</div>
+  </section>
 
-/* Header */
-.home-page .topbar {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 16px 7%;
-    background: rgba(255, 255, 255, 0.82);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid #ddd6fe;
-    box-shadow: 0 5px 25px #6d28d90d;
-    animation: slideDown 0.7s ease;
-}
+  {% if chat_requests %}
+  <section class="love-card discover-card" id="requests">
+    <div class="discover-top">
+      <div>
+        <h2>💌 Someone wants to chat with you</h2>
+        <p class="muted">Accept to open your private chat. Not interested? Just say "not now".</p>
+      </div>
+      <span class="discover-pill">{{ chat_requests|length }} new</span>
+    </div>
+    <div class="discover-wrap" data-carousel>
+      <button class="discover-arrow prev" type="button" aria-label="Previous" hidden>‹</button>
+      <div class="discover-track">
+        {% for r in chat_requests %}
+        <article class="pcard">
+          <div class="pcard-photo">
+            {% if r.sender.avatar %}<img src="{{ r.sender.avatar.url }}" alt="{{ r.sender.name }}" loading="lazy">{% else %}<span class="pcard-initial">{{ r.sender.initial }}</span>{% endif %}
+            <div class="pcard-shade"></div>
+            <div class="pcard-title"><h3>{{ r.sender.name }}</h3></div>
+          </div>
+          <div class="pcard-body">
+            <p class="pcard-about">{{ r.sender.about|default:"Hey there! I am using Chatly 💕" }}</p>
+            <div class="pcard-actions">
+              <form method="post" action="{% url 'request_accept' r.pk %}">{% csrf_token %}<button class="btn btn-primary pcard-main" type="submit">Accept 💗</button></form>
+              <form method="post" action="{% url 'request_decline' r.pk %}" style="flex:none">{% csrf_token %}<button class="pcard-skip" type="submit" title="Not now" aria-label="Not now">✕</button></form>
+            </div>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      <button class="discover-arrow next" type="button" aria-label="Next" hidden>›</button>
+    </div>
+  </section>
+  {% endif %}
 
-.home-page .brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.home-page .brand-logo {
-    width: 46px;
-    height: 46px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 15px;
-    background: linear-gradient(135deg, #7c3aed, #ec4899);
-    font-size: 24px;
-    box-shadow: 0 6px 18px #8b5cf644;
-    animation: floatLogo 3s ease-in-out infinite;
-}
-
-.home-page .brand-name {
-    color: #6d28d9;
-    font-size: 25px;
-    font-weight: 800;
-    letter-spacing: -0.8px;
-}
-
-.home-page .topbar-right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.home-page .topbar-right form {
-    margin: 0;
-}
-
-/* Avatar */
-.home-page .avatar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    color: white;
-    font-weight: bold;
-    background: linear-gradient(135deg, #8b5cf6, #ec4899);
-    box-shadow: 0 4px 14px #8b5cf644;
-    transition: transform 0.3s ease;
-}
-
-.home-page .avatar:hover {
-    transform: scale(1.1) rotate(5deg);
-}
-
-/* Main content */
-.home-page .home {
-    width: min(88%, 760px);
-    margin: 65px auto;
-    animation: fadeUp 0.8s ease both;
-}
-
-.home-page .home h1 {
-    color: #312e81;
-    font-size: clamp(28px, 5vw, 42px);
-    letter-spacing: -1px;
-    margin-bottom: 12px;
-}
-
-.home-page .lead {
-    color: #64748b;
-    font-size: 16px;
-    line-height: 1.8;
-    margin-bottom: 32px;
-}
-
-/* Invite card */
-.home-page .card {
-    position: relative;
-    overflow: hidden;
-    padding: 30px;
-    margin-bottom: 28px;
-    border: 1px solid #ddd6fe;
-    border-radius: 24px;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    box-shadow: 0 15px 45px #5b21b60f;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    animation: fadeUp 1s ease both;
-}
-
-.home-page .card::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 70%;
-    height: 4px;
-    background: linear-gradient(90deg, #8b5cf6, #ec4899, #06b6d4);
-    animation: shine 4s ease-in-out infinite;
-}
-
-.home-page .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 22px 50px #7c3aed20;
-}
-
-.home-page .card h2 {
-    color: #6d28d9;
-    font-size: 24px;
-    margin-top: 0;
-    margin-bottom: 12px;
-}
-
-.home-page .muted {
-    color: #64748b;
-    line-height: 1.8;
-    font-size: 14px;
-}
-
-/* Invite link */
-.home-page .copy-row {
-    display: flex;
-    gap: 10px;
-    margin-top: 22px;
-}
-
-.home-page #invite-link {
-    flex: 1;
-    min-width: 0;
-    padding: 14px 15px;
-    border: 1px solid #ddd6fe;
-    border-radius: 12px;
-    background: #faf9ff;
-    color: #5b21b6;
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.25s, box-shadow 0.25s;
-}
-
-.home-page #invite-link:focus {
-    border-color: #8b5cf6;
-    box-shadow: 0 0 0 4px #8b5cf61c;
-}
-
-/* Buttons */
-.home-page .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    cursor: pointer;
-    padding: 12px 19px;
-    border: none;
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: 600;
-    text-decoration: none;
-    transition: transform 0.25s ease, box-shadow 0.25s ease,
-                background 0.25s ease;
-}
-
-.home-page .btn-primary {
-    color: #fff;
-    background: linear-gradient(135deg, #7c3aed, #a855f7, #ec4899);
-    background-size: 200% 200%;
-    box-shadow: 0 6px 18px #8b5cf633;
-}
-
-.home-page .btn-primary:hover {
-    background-position: right center;
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px #8b5cf64d;
-}
-
-.home-page .btn-ghost {
-    color: #6d28d9;
-    background: #fff;
-    border: 1px solid #ddd6fe;
-}
-
-.home-page .btn-ghost:hover {
-    background: #ede9fe;
-    transform: translateY(-2px);
-}
-
-.home-page .share-btn {
-    margin-top: 12px;
-}
-
-.home-page .btn-lg {
-    padding: 15px 24px;
-    font-size: 16px;
-    animation: fadeUp 1.2s ease both;
-}
-
-.home-page .btn-lg:hover {
-    transform: translateY(-3px) scale(1.02);
-}
-
-/* Animations */
-@keyframes backgroundMove {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-18px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes fadeUp {
-    from {
-        opacity: 0;
-        transform: translateY(22px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes floatLogo {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
-}
-
-@keyframes shine {
-    0% { left: -100%; }
-    50%, 100% { left: 130%; }
-}
-
-/* Mobile responsive */
-@media (max-width: 600px) {
-    .home-page .topbar {
-        padding: 12px 5%;
-    }
-
-    .home-page .brand-name {
-        font-size: 21px;
-    }
-
-    .home-page .brand-logo {
-        width: 40px;
-        height: 40px;
-    }
-
-    .home-page .topbar-right {
-        gap: 8px;
-    }
-
-    .home-page .topbar-right .btn {
-        padding: 10px 12px;
-    }
-
-    .home-page .home {
-        width: 90%;
-        margin: 38px auto;
-    }
-
-    .home-page .card {
-        padding: 23px 17px;
-        border-radius: 19px;
-    }
-
-    .home-page .copy-row {
-        flex-direction: column;
-    }
-
-    .home-page .copy-row .btn {
-        width: 100%;
-    }
-
-    .home-page .btn-lg {
-        display: flex;
-        width: 100%;
-        box-sizing: border-box;
-    }
-}
-
-/* Accessibility */
-@media (prefers-reduced-motion: reduce) {
-    .home-page *,
-    .home-page *::before,
-    .home-page *::after {
-        animation: none !important;
-        transition: none !important;
-    }
-}
-</style>
-
-<header class="topbar">
-    <div class="brand">
-        <span class="brand-logo">💬</span>
-        <span class="brand-name">Chatly</span>
+  <section class="love-card discover-card" id="discover">
+    <div class="discover-top">
+      <div>
+        <h2>✨ People you may love to meet</h2>
+        <p class="muted">Swipe through and say hello. If they accept your request, your chat opens instantly.</p>
+      </div>
+      {% if recommended %}<span class="discover-pill" id="discover-count">{{ recommended|length }} picks for you</span>{% endif %}
     </div>
 
-    <div class="topbar-right">
-        <div
-            class="avatar av-{{ request.user.avatar_index }}"
-            title="{{ request.user.name }}"
-        >
-            {{ request.user.initial }}
+    {% if needs_gender %}
+      <div class="discover-empty"><b>🪪</b>Tell us who you are first.<br>Add your gender in <a href="{% url 'profile' %}">your profile</a> and we'll find lovely people for you 💕</div>
+    {% elif recommended %}
+      <div class="discover-wrap" data-carousel>
+        <button class="discover-arrow prev" type="button" aria-label="Previous" hidden>‹</button>
+        <div class="discover-track">
+          {% for u in recommended %}
+          <article class="pcard">
+            <div class="pcard-photo">
+              {% if u.avatar %}<img src="{{ u.avatar.url }}" alt="{{ u.name }}" loading="lazy">{% else %}<span class="pcard-initial">{{ u.initial }}</span>{% endif %}
+              <div class="pcard-badges">
+                {% if u.is_new %}<span class="pcard-badge">🌸 New</span>{% endif %}
+                {% if u.active_now %}<span class="pcard-badge online">Active today</span>{% endif %}
+              </div>
+              <div class="pcard-shade"></div>
+              <div class="pcard-title"><h3>{{ u.name }}{% if u.age %}<span>, {{ u.age }}</span>{% endif %}</h3></div>
+            </div>
+            <div class="pcard-body">
+              <p class="pcard-about">{{ u.about|default:"Hey there! I am using Chatly 💕" }}</p>
+              <div class="pcard-actions">
+                <form method="post" action="{% url 'request_send' u.pk %}" class="js-request">
+                  {% csrf_token %}
+                  {% if u.request_sent %}
+                    <button class="btn btn-primary pcard-main done" type="button" disabled>Requested ✓</button>
+                  {% else %}
+                    <button class="btn btn-primary pcard-main" type="submit">Say hi 💗</button>
+                  {% endif %}
+                </form>
+                <button class="pcard-skip" type="button" title="Not now" aria-label="Not now">✕</button>
+              </div>
+            </div>
+          </article>
+          {% endfor %}
         </div>
+        <button class="discover-arrow next" type="button" aria-label="Next" hidden>›</button>
+      </div>
+      <div class="discover-empty" id="discover-done" hidden><b>💞</b>That's everyone for now.<br>New people join every day, check back soon!</div>
+    {% else %}
+      <div class="discover-empty"><b>💞</b>No new people right now.<br>New hearts join every day, check back soon!</div>
+    {% endif %}
+  </section>
 
-        <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-ghost">
-                Log out
-            </button>
-        </form>
+  <section class="love-card" id="invite">
+    <h2>💌 Invite someone special</h2>
+    <p class="muted">Send your personal link to your partner, best friend or family. The moment they join, you two are connected and the chat is ready.</p>
+
+    <div class="copy-row">
+      <input id="invite-link" class="input" type="text" readonly value="{{ invite_url }}" aria-label="Your invite link">
+      <button id="copy-btn" class="btn btn-primary" type="button">Copy link</button>
     </div>
-</header>
+    <button id="share-btn" class="btn btn-ghost share-btn" type="button" hidden>Share…</button>
+  </section>
 
-<main class="home">
-    <h1>Hi {{ request.user.name }} 👋</h1>
+  <section class="love-card quota-card">
+    <h2>📊 Your messages today</h2>
+    <p class="muted">Free messages reset every day at {{ reset_label }}. Bought messages are used after the free ones.</p>
+    <ul class="quota-list">
+      {% for r in rows %}
+      <li>
+        <div class="quota-head"><span>{{ r.icon }} {{ r.long|capfirst }}</span><strong>{{ r.remaining }} left</strong></div>
+        <div class="bar" aria-hidden="true"><span style="width: {{ r.percent }}%"></span></div>
+        <small>{{ r.used }} of {{ r.limit }} free used today{% if r.credits %} · {{ r.credits }} bought{% endif %}</small>
+      </li>
+      {% endfor %}
+    </ul>
+    <a class="btn btn-primary" href="{% url 'pricing' %}">Buy more messages 💳</a>
+  </section>
 
-    <p class="lead">
-        Your people, your conversations. Start connecting with Chatly 💜
-    </p>
+  <ul class="perks">
+    <li><span>💬</span>Live chat<small>Instant messages</small></li>
+    <li><span>🎤</span>Voice notes<small>Say it with your voice</small></li>
+    <li><span>📸</span>Photos<small>Share your moments</small></li>
+    <li><span>💞</span>Profiles<small>Know your people</small></li>
+  </ul>
 
-    <section class="card">
-        <h2>✨ Invite a friend</h2>
-
-        <p class="muted">
-            Share your personal invite link through a message, email or SMS.
-            When your friend joins Chatly, you can start connecting instantly.
-        </p>
-
-        <div class="copy-row">
-            <input
-                id="invite-link"
-                class="input"
-                type="text"
-                readonly
-                value="{{ invite_url }}"
-                aria-label="Your invite link"
-            >
-
-            <button id="copy-btn" class="btn btn-primary" type="button">
-                Copy link
-            </button>
-        </div>
-
-        <button
-            id="share-btn"
-            class="btn btn-ghost share-btn"
-            type="button"
-            hidden
-        >
-            Share…
-        </button>
-    </section>
-
-    <a class="btn btn-primary btn-lg" href="{% url 'dashboard' %}">
-        Open my chats →
-    </a>
 </main>
-
 {% endblock %}
 
 {% block extra_js %}
 <script src="{% static 'js/home.js' %}"></script>
+<script src="{% static 'js/discover.js' %}"></script>
+<script>
+  // A new love note every few seconds
+  (function () {
+    var box = document.getElementById('love-quote');
+    if (!box) return;
+    var notes = [
+      'You make every ordinary day feel special 💕',
+      'Tum ho to sab kuch hai 💗',
+      'Distance means nothing when someone means everything 💞',
+      'Aapki ek smile, meri poori duniya 🌹',
+      'Home is wherever I am with you 🏡',
+      'Har baat mein tera zikr hai 💌',
+      'You are my favourite notification 🔔'
+    ];
+    var i = 0;
+    setInterval(function () {
+      box.classList.add('fade');
+      setTimeout(function () { i = (i + 1) % notes.length; box.textContent = notes[i]; box.classList.remove('fade'); }, 500);
+    }, 4500);
+  })();
+</script>
 {% endblock %}

@@ -1,0 +1,57 @@
+```django
+{% extends "base.html" %}
+{% block title %}{{ person.name }} · Chatly{% endblock %}
+{% block body_class %}love-page{% endblock %}
+
+{% block content %}
+<header class="topbar">
+  <a class="brand" href="{% url 'home' %}">
+    <span class="brand-logo">💖</span>
+    <span class="brand-name">Chatly</span>
+  </a>
+  <div class="topbar-right">
+    <a class="btn btn-ghost" href="{% url 'chat' conversation.pk %}">← Back to chat</a>
+  </div>
+</header>
+
+<main class="profile-wrap">
+  <section class="profile-card">
+    <div class="profile-cover"></div>
+
+    <div class="avatar-slot">
+      {% include "accounts/_avatar.html" with u=person size="xxl" %}
+    </div>
+
+    <h1>{{ person.name }}</h1>
+
+    <div class="about-bubble">
+      {{ person.about|default:"Hey there! I am using Chatly 💕" }}
+    </div>
+
+    <div class="contact-list">
+      {% if person.email %}
+        <span>✉️ {{ person.email }}</span>
+      {% endif %}
+
+      {% if person.phone %}
+        <span>📞 {{ person.phone }}</span>
+      {% endif %}
+
+      {% if person.date_of_birth %}
+        <span>🎂 Date of Birth: {{ person.date_of_birth|date:"d M Y" }}</span>
+      {% endif %}
+
+      {% if person.gender %}
+        <span>👤 Gender: {{ person.get_gender_display }}</span>
+      {% endif %}
+
+      <span>💞 Connected on Chatly</span>
+    </div>
+
+    <a class="btn btn-primary btn-lg" href="{% url 'chat' conversation.pk %}">
+      Send a message 💌
+    </a>
+  </section>
+</main>
+{% endblock %}
+```

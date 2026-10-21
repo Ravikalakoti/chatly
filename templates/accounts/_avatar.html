@@ -1,0 +1,1 @@
+{% comment %}Usage: {% include "accounts/_avatar.html" with u=some_user size="lg" %}{% endcomment %}<span class="avatar av-{{ u.avatar_index }} {{ size }}">{% if u.avatar %}<img src="{{ u.avatar.url }}" alt="{{ u.name }}">{% else %}{{ u.initial }}{% endif %}</span>

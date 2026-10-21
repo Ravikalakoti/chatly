@@ -66,9 +66,27 @@ class AuthFlowTests(TestCase):
         resp = self.client.post(reverse("login"), {"identifier": "asha@example.com", "password": "nope"})
         self.assertContains(resp, "Incorrect phone/email or password")
 
-    def test_home_requires_login(self):
+    def test_home_is_the_public_landing_page_when_logged_out(self):
         resp = self.client.get(reverse("home"))
-        self.assertRedirects(resp, f"{reverse('login')}?next=/", fetch_redirect_response=False)
+        self.assertEqual(resp.status_code, 200)
+        self.assertTemplateUsed(resp, "accounts/landing.html")
+        self.assertContains(resp, "Create free account")
+        self.assertContains(resp, reverse("signup"))
+        self.assertContains(resp, reverse("login"))
+
+    def test_landing_page_shows_the_limits_from_settings(self):
+        from django.test import override_settings
+
+        with override_settings(FREE_DAILY_LIMITS={"text": 7, "voice": 3, "image": 2}):
+            resp = self.client.get(reverse("home"))
+        self.assertContains(resp, "7 text messages")
+        self.assertContains(resp, "3 voice messages")
+        self.assertContains(resp, "2 photos")
+
+    def test_logout_returns_to_landing_page(self):
+        self.signup("asha@example.com")
+        resp = self.client.post(reverse("logout"))
+        self.assertRedirects(resp, reverse("home"))
 
 
 class InviteFlowTests(TestCase):
@@ -79,6 +97,7 @@ class InviteFlowTests(TestCase):
         self.client.force_login(self.inviter)
         resp = self.client.get(reverse("home"))
         self.assertContains(resp, f"/invite/{self.inviter.invite_code}/")
+        self.assertContains(resp, "Your messages today")
 
     def test_new_user_signs_up_through_invite(self):
         url = reverse("invite", args=[self.inviter.invite_code])

@@ -1,5 +1,7 @@
 # Chatly — WhatsApp-style real-time chat (Django 6.1)
 
+- Public **landing page** at `/` for visitors (what Chatly is, free limits, packs, sign up / log in)
+- **Free daily limits** per user (default 20 text, 5 voice, 5 photos) and **paid message packs** (Razorpay)
 - Sign up / log in with **phone number or email + password**
 - Home page with your personal **invite link** (copy button, native share on phones)
 - Opening an invite link → new people create an account, existing people just log in → both are **connected automatically** and land in the chat
@@ -20,6 +22,32 @@ python manage.py runserver
 Open http://127.0.0.1:8000/ . To try the invite flow, sign up, copy your link from the home page, then open it in a private/incognito window (a second browser session) and sign up as a second user.
 
 Run the tests: `python manage.py test`
+
+## Free limits & buying more messages
+
+Everything is configured in one place: **`config/settings.py` → "FREE LIMITS & PAID PACKS"** (or with env vars).
+
+```python
+FREE_DAILY_LIMITS = {"text": 20, "voice": 5, "image": 5}   # env: FREE_TEXT_PER_DAY, FREE_VOICE_PER_DAY, FREE_IMAGES_PER_DAY
+LIMITS_TIMEZONE = "UTC"                                     # free counters reset at midnight in this timezone
+CREDIT_PACKS = [{"id": "starter", "name": "Starter", "price": 49, "text": 200, "voice": 20, "image": 20}, ...]
+```
+
+Change a number and restart: the chat, the landing page, the home page and the buy page all follow it.
+
+- Free messages are used first; bought messages are used only when the free ones for the day are gone, and they never expire.
+- Text is checked in `chat/consumers.py`, photos and voice in `chat/views.py` (`attach_api`); the rules live in `billing/limits.py`.
+- Give someone free messages from `/admin/` -> Billing -> Wallets. Payments appear under Orders.
+
+### Payments (Razorpay)
+
+1. Create a Razorpay account and copy the **Key ID** and **Key Secret** (use the *test* keys first).
+2. Set `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` (in `.env` locally, or in the Render dashboard).
+3. Recommended: in Razorpay -> Webhooks add `https://YOUR-DOMAIN/buy/webhook/` for the events `payment.captured` and `order.paid`, and put its secret in `RAZORPAY_WEBHOOK_SECRET`. This adds the messages even if the buyer closes the tab right after paying.
+
+With `DEBUG=True` and no keys, the Buy button runs a **fake test payment** so you can try the whole flow locally. It is disabled automatically in production.
+
+After pulling these changes run `python manage.py migrate` (adds the `billing` tables).
 
 ## Deploy on Render (free)
 
@@ -53,6 +81,7 @@ accounts/          custom User (email / phone / display name / invite_code),
                    login backend, signup/login views, invite flow
 chat/              Conversation + Message models, websocket consumer,
                    dashboard + history views
+billing/           daily limits, message packs, Razorpay checkout + webhook
 templates/, static/  UI (plain HTML/CSS/JS, no build step)
 ```
 

@@ -17,16 +17,23 @@ Server -> client events:
     {"type": "read_self", "conversation": 1}                # you read them in another tab
     {"type": "conversation", "conversation": {...info}}     # a new contact appeared
     {"type": "pong"} / {"type": "error", "detail": "..."}
+    {"type": "limit", "kind": "text", "client_id": "abc", "detail": "...", "quota": {...}}
+                                                           # daily free limit used up, nothing was sent
+(The "message" event also carries "quota" for the sender: how many messages they have left.)
 """
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from django.db import transaction
 from django.utils import timezone
+
+from billing.limits import consume, get_status, limit_message
 
 from .models import Conversation, Message
 from .payloads import conversation_info, message_payload
-from .services import conversations_for, user_group
+from .services import conversations_for, mark_conversation_notifications_seen, user_group
 
 MAX_BODY_LENGTH = 4000
+LIMIT_REACHED = "limit"
 
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
@@ -75,20 +82,29 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         if saved is None:
             await self.send_json({"type": "error", "detail": "Conversation not found."})
             return
-        conversation, message = saved
-        for viewer in (conversation.user_a, conversation.user_b):
-            await self.channel_layer.group_send(
-                user_group(viewer.pk),
+        if saved == LIMIT_REACHED:
+            await self.send_json(
                 {
-                    "type": "chat.event",
-                    "payload": {
-                        "type": "message",
-                        "conversation": conversation_info(conversation, viewer),
-                        # client_id lets the sender's tab match this event to its pending bubble
-                        "message": message_payload(message, client_id if viewer.pk == self.user.pk else None),
-                    },
-                },
+                    "type": "limit",
+                    "kind": "text",
+                    "client_id": client_id,
+                    "detail": limit_message("text"),
+                    "quota": await self.quota(),
+                }
             )
+            return
+        conversation, message = saved
+        quota = await self.quota()
+        for viewer in (conversation.user_a, conversation.user_b):
+            payload = {
+                "type": "message",
+                "conversation": conversation_info(conversation, viewer),
+                # client_id lets the sender's tab match this event to its pending bubble
+                "message": message_payload(message, client_id if viewer.pk == self.user.pk else None),
+            }
+            if viewer.pk == self.user.pk:
+                payload["quota"] = quota  # keeps the sender's "messages left" counters current
+            await self.channel_layer.group_send(user_group(viewer.pk), {"type": "chat.event", "payload": payload})
 
     async def handle_typing(self, conversation_id):
         conversation = await self.get_conversation(conversation_id)
@@ -149,11 +165,20 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             existing = Message.objects.filter(sender=self.user, client_id=client_id).first()
             if existing is not None:
                 return conversation, existing
-        message = Message.objects.create(
-            conversation=conversation, sender=self.user, body=body, client_id=client_id
-        )
+        # Count the message against today's free limit (or a bought credit) and store it together:
+        # if saving fails, the count is rolled back too.
+        with transaction.atomic():
+            if not consume(self.user, Message.TEXT):
+                return LIMIT_REACHED
+            message = Message.objects.create(
+                conversation=conversation, sender=self.user, body=body, client_id=client_id
+            )
         Conversation.objects.filter(pk=conversation.pk).update(updated_at=message.created_at)
         return conversation, message
+
+    @database_sync_to_async
+    def quota(self):
+        return get_status(self.user)
 
     @database_sync_to_async
     def mark_read(self, conversation_id):
@@ -169,4 +194,5 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         newest = unread.order_by("-id").values_list("id", flat=True).first()
         if newest is not None:
             unread.update(read_at=timezone.now())
+        mark_conversation_notifications_seen(self.user, conversation.pk)
         return conversation, newest

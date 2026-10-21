@@ -17,6 +17,7 @@
 
   const $ = (sel) => document.querySelector(sel);
   const els = {
+    quota: $('#quota-strip'),
     list: $('#conv-list'),
     empty: $('#list-empty'),
     search: $('#search'),
@@ -26,6 +27,11 @@
     loadMore: $('#load-more'),
     form: $('#composer'),
     input: $('#msg-input'),
+    sendBtn: $('#send-btn'),
+    micBtn: $('#mic-btn'),
+    photoInput: $('#photo-input'),
+    recBar: $('#rec-bar'),
+    recTime: $('#rec-time'),
     peerAvatar: $('#peer-avatar'),
     peerName: $('#peer-name'),
     peerStatus: $('#peer-status'),
@@ -64,6 +70,12 @@
     return date.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 
+  function previewMsg(m) {
+    if (m.kind === 'image') return '📷 ' + (previewOf(m.body || '') || 'Photo');
+    if (m.kind === 'voice') return '🎤 Voice message';
+    return previewOf(m.body);
+  }
+
   function previewOf(body) {
     const flat = body.split(/\s+/).join(' ').trim();
     return flat.length <= 60 ? flat : flat.slice(0, 59) + '…';
@@ -87,11 +99,63 @@
     setTimeout(() => t.remove(), 5200);
   }
 
+  // A longer-lived toast that ends with a "Buy more" link (used when a daily limit is reached).
+  function limitToast(text) {
+    let box = document.querySelector('.toasts');
+    if (!box) {
+      box = el('div', 'toasts');
+      document.body.appendChild(box);
+    }
+    const t = el('div', 'toast toast-info', (text || 'Daily limit reached.') + ' ');
+    const link = el('a', null, 'Buy more');
+    link.href = cfg.urls.buy;
+    t.appendChild(link);
+    box.appendChild(t);
+    setTimeout(() => t.classList.add('toast-hide'), 9000);
+    setTimeout(() => t.remove(), 9700);
+  }
+
+  // ------------------------------------------------- messages left (daily limits)
+  const QUOTA_KINDS = [
+    ['text', '💬', 'text messages'],
+    ['voice', '🎤', 'voice messages'],
+    ['image', '📸', 'photos'],
+  ];
+
+  function renderQuota(q) {
+    if (!q || !els.quota) return;
+    const chips = QUOTA_KINDS.map((k) => {
+      const d = q[k[0]];
+      if (!d) return null;
+      const state = d.remaining === 0 ? ' empty' : d.remaining <= 2 ? ' low' : '';
+      const chip = el('span', 'quota-chip' + state, k[1] + ' ' + d.remaining);
+      chip.title = d.remaining + ' ' + k[2] + ' left' +
+        (d.credits ? ' (' + d.free_left + ' free today + ' + d.credits + ' bought)' : ' (' + d.limit + ' free a day)');
+      return chip;
+    }).filter(Boolean);
+    const buy = el('a', 'quota-buy', 'Buy more');
+    buy.href = q.buy_url || cfg.urls.buy;
+    els.quota.replaceChildren(el('span', 'quota-label', 'Left'), ...chips, buy);
+  }
+
   // ------------------------------------------------------------------ sidebar
   const convs = new Map();
   cfg.conversations.forEach((c) => convs.set(c.id, c));
   if (activeId && convs.has(activeId)) convs.get(activeId).unread = 0;
   const typingTimers = new Map();          // conversation id -> timeout handle
+  // Round avatar: profile photo if the person has one, otherwise a coloured initial.
+  function avatarEl(c) {
+      const d = el('div', 'avatar av-' + c.color);
+      if (c.avatar) {
+          const img = document.createElement('img');
+          img.src = c.avatar;
+          img.alt = c.name;
+          d.appendChild(img);
+      } else {
+          d.textContent = c.initial;
+      }
+      return d;
+  }
 
   function buildConvItem(c) {
     const a = el('a', 'conv');
@@ -99,7 +163,7 @@
     a.dataset.id = c.id;
     if (c.id === activeId) a.classList.add('active');
 
-    a.appendChild(el('div', 'avatar av-' + c.color, c.initial));
+    a.appendChild(avatarEl(c));
 
     const main = el('div', 'conv-main');
     const top = el('div', 'conv-top');
@@ -191,7 +255,24 @@
     const row = el('div', 'msg ' + (mine ? 'out' : 'in'));
     if (m.id) row.dataset.id = m.id;
     const bubble = el('div', 'bubble');
-    bubble.appendChild(el('span', 'text', m.body));
+    if (m.kind === 'image' && m.file) {
+      const a = el('a', 'media-link');
+      a.href = m.file; a.target = '_blank'; a.rel = 'noopener';
+      const img = document.createElement('img');
+      img.className = 'chat-img'; img.src = m.file; img.alt = 'Photo'; img.loading = 'lazy';
+      img.addEventListener('load', () => {
+        const s = els.scroller;
+        if (s.scrollHeight - s.scrollTop - s.clientHeight < 500) scrollToBottom();
+      });
+      a.appendChild(img);
+      bubble.appendChild(a);
+
+    } else if (m.kind === 'voice' && m.file) {
+      const audio = document.createElement('audio');
+      audio.className = 'chat-audio'; audio.controls = true; audio.preload = 'metadata'; audio.src = m.file;
+      bubble.appendChild(audio);
+    }
+    if (m.body) bubble.appendChild(el('span', 'text', m.body));
     const meta = el('span', 'meta');
     meta.appendChild(el('time', null, clock(new Date(m.created_at))));
     if (mine) {
@@ -378,12 +459,30 @@
         }
         return;
       }
+      case 'limit': return onLimit(ev);
       case 'error': return toast(ev.detail || 'Something went wrong.');
       default: return;
     }
   }
 
+  // The server refused a text message because today's free limit (and any bought messages) ran out.
+  function onLimit(ev) {
+    renderQuota(ev.quota);
+    const p = ev.client_id ? pending.get(ev.client_id) : null;
+    if (p) {
+      p.el.remove();
+      pending.delete(ev.client_id);
+      if (els.input && !els.input.value.trim()) {      // give the text back so it isn't lost
+        els.input.value = p.body;
+        autoGrow();
+        updateComposerButtons();
+      }
+    }
+    limitToast(ev.detail);
+  }
+
   function onMessage(ev) {
+    if (ev.quota) renderQuota(ev.quota);
     const info = ev.conversation;
     const m = ev.message;
     let c = convs.get(info.id);
@@ -391,7 +490,7 @@
       c = Object.assign({}, info, { preview: '', last_mine: false, last_at: m.created_at, has_messages: true, unread: 0 });
       convs.set(info.id, c);
     }
-    c.preview = previewOf(m.body);
+    c.preview = previewMsg(m);
     c.last_mine = m.sender === ME;
     c.last_at = m.created_at;
     c.has_messages = true;
@@ -444,7 +543,112 @@
 
     els.input.value = '';
     autoGrow();
+    updateComposerButtons();
     els.input.focus();
+  }
+
+    // -------------------------------------------------------- photos & voice notes
+  function csrfToken() {
+    const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+
+  function uploadFile(blob, kind, filename, caption) {
+    if (!cfg.urls.attach) return Promise.resolve();
+    const fd = new FormData();
+    fd.append('file', blob, filename);
+    fd.append('kind', kind);
+    fd.append('client_id', uuid());
+    if (caption) fd.append('caption', caption);
+    els.form.classList.add('busy');
+    return fetch(cfg.urls.attach, {
+      method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-CSRFToken': csrfToken() },
+    })
+      .then((r) => r.json().catch(() => ({})).then((d) => {
+        if (d.quota) renderQuota(d.quota);
+        if (r.status === 402) { limitToast(d.error); return false; }   // daily limit reached
+        if (!r.ok) throw new Error(d.error || 'Could not send.');
+        return true;
+      }))
+      .catch((e) => { toast(e.message || 'Could not send. Check your connection.'); return false; })
+      .finally(() => els.form.classList.remove('busy'));
+  }
+
+  // Shrink big phone photos before upload (max 1600px, JPEG) so they send fast.
+  function shrinkImage(file) {
+    if (file.type === 'image/gif' || !window.createImageBitmap) return Promise.resolve(file);
+    return createImageBitmap(file).then((bmp) => {
+      const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(bmp.width * scale);
+      canvas.height = Math.round(bmp.height * scale);
+      canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
+      return new Promise((resolve) => canvas.toBlob((b) => resolve(b || file), 'image/jpeg', 0.85));
+    }).catch(() => file);
+  }
+
+  function sendPhoto(file) {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast('Please choose an image.'); return; }
+    shrinkImage(file).then((blob) => uploadFile(blob, 'image', 'photo.jpg', els.input.value.trim()))
+      .then((ok) => { if (ok) { els.input.value = ''; autoGrow(); updateComposerButtons(); } });
+  }
+
+  // Voice recording (MediaRecorder; needs https or localhost for the microphone).
+  const MAX_REC_SECONDS = 180;
+  let rec = null, recChunks = [], recStream = null, recStart = 0, recTick = null, recCancelled = false;
+
+  function pickAudioType() {
+    const options = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+    return options.find((t) => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
+  }
+
+  function fmtSecs(s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+
+  function startRecording() {
+    if (!navigator.mediaDevices || !window.MediaRecorder) {
+      toast('Voice messages are not supported in this browser (use https).'); return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+      recStream = stream;
+      const mime = pickAudioType();
+      rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      recChunks = []; recCancelled = false;
+      rec.ondataavailable = (e) => { if (e.data && e.data.size) recChunks.push(e.data); };
+      rec.onstop = () => {
+        recStream.getTracks().forEach((t) => t.stop());
+        clearInterval(recTick);
+        els.form.classList.remove('recording');
+        els.recBar.hidden = true;
+        if (recCancelled) return;
+        if (Date.now() - recStart < 600) { toast('Too short — hold the recording a bit longer.'); return; }
+        const type = rec.mimeType || mime || 'audio/webm';
+        const ext = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm';
+        uploadFile(new Blob(recChunks, { type: type }), 'voice', 'voice.' + ext);
+      };
+      rec.start();
+      recStart = Date.now();
+      els.recTime.textContent = '0:00';
+      els.recBar.hidden = false;
+      els.form.classList.add('recording');
+      recTick = setInterval(() => {
+        const secs = Math.floor((Date.now() - recStart) / 1000);
+        els.recTime.textContent = fmtSecs(secs);
+        if (secs >= MAX_REC_SECONDS) stopRecording(false);
+      }, 250);
+    }).catch(() => toast('Microphone access was blocked. Allow it in your browser settings.'));
+  }
+
+  function stopRecording(cancel) {
+    if (!rec || rec.state === 'inactive') return;
+    recCancelled = !!cancel;
+    rec.stop();
+  }
+
+  function updateComposerButtons() {
+    const hasText = els.input.value.trim().length > 0;
+    els.sendBtn.hidden = !hasText;
+    els.micBtn.hidden = hasText;
   }
 
   function autoGrow() {
@@ -454,10 +658,11 @@
 
   // -------------------------------------------------------------------- init
   renderSidebar();
+  renderQuota(cfg.quota);
 
   if (active) {
-    els.peerAvatar.className = 'avatar av-' + active.color;
-    els.peerAvatar.textContent = active.initial;
+    els.peerAvatar.replaceWith(avatarEl(active));
+    document.getElementById('peer-link').href = active.profile_url;
     els.peerName.textContent = active.name;
 
     store = cfg.messages.slice();
@@ -466,9 +671,18 @@
 
     els.loadMore.addEventListener('click', loadEarlier);
     els.form.addEventListener('submit', (e) => { e.preventDefault(); send(); });
+    els.photoInput.addEventListener('change', () => {
+      sendPhoto(els.photoInput.files[0]);
+      els.photoInput.value = '';
+    });
+    els.micBtn.addEventListener('click', startRecording);
+    $('#rec-cancel').addEventListener('click', () => stopRecording(true));
+    $('#rec-send').addEventListener('click', () => stopRecording(false));
+    updateComposerButtons();
 
     els.input.addEventListener('input', () => {
       autoGrow();
+      updateComposerButtons();
       const now = Date.now();
       if (els.input.value && now - lastTypingSent > 2500) {
         lastTypingSent = now;

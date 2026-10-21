@@ -1,0 +1,11 @@
+{% comment %}Notification bell. Usage: {% include "accounts/_bell.html" %} inside a .topbar-right. Needs static/js/bell.js.{% endcomment %}
+<div class="bell" id="bell" data-list-url="{% url 'notifications_api' %}" data-seen-url="{% url 'notifications_seen' %}" data-csrf="{{ csrf_token }}">
+  <button class="bell-btn" id="bell-btn" type="button" aria-label="Notifications" aria-expanded="false">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M12 22a2.4 2.4 0 0 0 2.4-2.4h-4.8A2.4 2.4 0 0 0 12 22zm7-6.2V11c0-3.2-1.7-5.9-4.7-6.6V3.6a2.3 2.3 0 0 0-4.6 0v.8C6.7 5.1 5 7.8 5 11v4.8l-2 2V19h18v-1.2z"/></svg>
+    <span class="bell-badge" id="bell-badge" hidden>0</span>
+  </button>
+  <div class="bell-panel" id="bell-panel" hidden>
+    <div class="bell-head">Notifications 💗</div>
+    <div class="bell-list" id="bell-list"><p class="bell-empty">Nothing yet. Your love notes will show up here 💞</p></div>
+  </div>
+</div>

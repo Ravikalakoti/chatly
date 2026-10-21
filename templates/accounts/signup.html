@@ -1,11 +1,14 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Create account · Chatly{% endblock %}
 {% block body_class %}auth-page{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/auth.css' %}">{% endblock %}
 
 {% block content %}
 <main class="auth-card">
+  {% include "accounts/_cartoon.html" %}
   <div class="brand">
-    <span class="brand-logo">💬</span>
+    <span class="brand-logo">💖</span>
     <span class="brand-name">Chatly</span>
   </div>
 
@@ -15,14 +18,14 @@
       <p><strong>{{ inviter.name }}</strong> invited you to chat.<br>Create your account to get started.</p>
     </div>
   {% else %}
-    <h1>Create your account</h1>
+    <h1>Create your account 💕</h1>
   {% endif %}
 
   <form method="post" novalidate class="auth-form">
     {% csrf_token %}
     {% if form.non_field_errors %}<div class="form-error">{{ form.non_field_errors }}</div>{% endif %}
     {% for field in form %}{% include "accounts/_field.html" %}{% endfor %}
-    <button type="submit" class="btn btn-primary btn-block">Sign up</button>
+    <button type="submit" class="btn btn-primary btn-block">Sign up ✨</button>
   </form>
 
   <p class="auth-switch">Already have an account? <a href="{% url 'login' %}">Log in</a></p>

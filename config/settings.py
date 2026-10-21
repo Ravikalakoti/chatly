@@ -20,6 +20,13 @@ def env_bool(name, default=False):
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def env_int(name, default):
+    try:
+        return int(os.environ.get(name, default))
+    except (TypeError, ValueError):
+        return default
+
+
 def env_list(name):
     return [item.strip() for item in os.environ.get(name, "").split(",") if item.strip()]
 
@@ -57,6 +64,7 @@ INSTALLED_APPS = [
     "channels",
     "accounts",
     "chat",
+    "billing",
 ]
 
 MIDDLEWARE = [
@@ -82,6 +90,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "chat.context_processors.nav",
             ],
         },
     },
@@ -121,7 +130,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "home"
-LOGOUT_REDIRECT_URL = "login"
+LOGOUT_REDIRECT_URL = "home"  # the public landing page
 
 # Phone numbers typed without a country code get this one (India = 91).
 DEFAULT_COUNTRY_CODE = os.environ.get("DEFAULT_COUNTRY_CODE", "91")
@@ -155,6 +164,13 @@ STORAGES = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# --- Uploaded files (profile photos) ----------------------------------------
+# NOTE: on Render's free plan the disk is wiped on every deploy. For permanent
+# photos, attach a Render Disk and point MEDIA_ROOT at it (env MEDIA_ROOT).
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.environ.get("MEDIA_ROOT", str(BASE_DIR / "media"))
+DATA_UPLOAD_MAX_MEMORY_SIZE = 6 * 1024 * 1024
+
 # --- Production security ----------------------------------------------------
 if not DEBUG:
     # Render terminates TLS in front of the app and forwards this header.
@@ -162,3 +178,46 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+
+
+# =============================================================================
+# FREE LIMITS & PAID PACKS  <- change the numbers here (or with the env vars)
+# =============================================================================
+# Free messages every user gets per day. Change a number and restart the server:
+# the chat, the landing page and the pricing page all follow it.
+FREE_DAILY_LIMITS = {
+    "text": env_int("FREE_TEXT_PER_DAY", 20),    # text messages
+    "voice": env_int("FREE_VOICE_PER_DAY", 5),   # audio / voice messages
+    "image": env_int("FREE_IMAGES_PER_DAY", 5),  # photos
+}
+# How many "Suggested for you" profiles each user sees in the chat sidebar.
+#   free  -> users who have never bought a pack
+#   paid  -> users with at least one paid order
+RECOMMENDED_PROFILES = {
+    "free": env_int("FREE_RECOMMENDED_PROFILES", 5),
+    "paid": env_int("PAID_RECOMMENDED_PROFILES", 10),
+}
+# The daily counters reset at midnight in this timezone (any name from the IANA list, e.g. "Asia/Kolkata").
+LIMITS_TIMEZONE = os.environ.get("LIMITS_TIMEZONE", "UTC")
+
+# Packs people can buy when the free messages run out. Bought messages are used only after
+# the free ones for the day, and they never expire. `price` is in whole currency units.
+PAYMENT_CURRENCY = os.environ.get("PAYMENT_CURRENCY", "INR")
+PAYMENT_CURRENCY_SYMBOL = os.environ.get("PAYMENT_CURRENCY_SYMBOL", "₹")
+CREDIT_PACKS = [
+    {"id": "starter", "name": "Starter", "price": 49, "text": 200, "voice": 20, "image": 20},
+    {"id": "plus", "name": "Plus", "price": 99, "text": 500, "voice": 50, "image": 50, "popular": True},
+    {"id": "pro", "name": "Pro", "price": 249, "text": 1500, "voice": 150, "image": 150},
+]
+
+# --- Razorpay (payments) ------------------------------------------------------
+# Leave these empty to keep payments off. While DEBUG is on and no keys are set,
+# the "Buy" button runs a fake test payment so you can try the full flow.
+RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
+RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
+RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "")
+
+
+# --- Development-phase notice (popup shown once on a user's first visit to the home page) ---
+DEV_CONTACT_NAME = os.environ.get("DEV_CONTACT_NAME", "Ravi")
+DEV_CONTACT_EMAIL = os.environ.get("DEV_CONTACT_EMAIL", "ravikalakoti16@gmail.com")
