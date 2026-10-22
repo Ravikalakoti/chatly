@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 {% load static %}
 {% block title %}Log in · Chatly{% endblock %}
@@ -44,6 +43,10 @@
       Log in ✨
     </button>
   </form>
+
+  <p class="auth-switch">
+    <a href="{% url 'password_reset' %}">Forgot password? 💌</a>
+  </p>
 
   <p class="auth-switch">
     New here?

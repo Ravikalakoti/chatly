@@ -1,4 +1,5 @@
 from django.conf import settings
+import requests
 from django.contrib import messages
 from django.http import JsonResponse
 from django.contrib.auth import login, logout
@@ -15,6 +16,16 @@ from chat.services import connect_users, conversations_for, incoming_requests, r
 
 from .forms import LoginForm, SignupForm, ProfileForm
 from .models import User
+from django.contrib.auth.forms import PasswordResetForm
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+from django.template.loader import render_to_string
+from django.views.decorators.http import require_http_methods
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 INVITE_SESSION_KEY = "invite_code"
 AUTH_BACKEND = "accounts.backends.IdentifierBackend"
@@ -172,3 +183,76 @@ def dev_notice_seen(request):
     """The welcome popup was closed: never show it to this person again."""
     User.objects.filter(pk=request.user.pk).update(seen_dev_notice=True)
     return JsonResponse({"ok": True})
+
+
+@require_http_methods(["GET", "POST"])
+def password_reset_request(request):
+    if request.method == "POST":
+        form = PasswordResetForm(request.POST)
+
+        if form.is_valid():
+            email = form.cleaned_data["email"]
+
+            # Do not reveal whether an account exists.
+            for user in form.get_users(email):
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                token = default_token_generator.make_token(user)
+
+                reset_path = reverse(
+                    "password_reset_confirm",
+                    kwargs={"uidb64": uid, "token": token},
+                )
+                reset_url = request.build_absolute_uri(reset_path)
+
+                html_content = render_to_string(
+                    "accounts/password_reset_email.html",
+                    {
+                        "user": user,
+                        "reset_url": reset_url,
+                    },
+                )
+
+                text_content = render_to_string(
+                    "accounts/password_reset_email.txt",
+                    {
+                        "user": user,
+                        "reset_url": reset_url,
+                    },
+                )
+
+                payload = {
+                    "sender": {
+                        "name": "Chatly",
+                        "email": settings.DEFAULT_FROM_EMAIL,
+                    },
+                    "to": [{"email": user.email}],
+                    "subject": "Reset your Chatly password",
+                    "htmlContent": html_content,
+                    "textContent": text_content,
+                }
+       
+                try:
+                    response = requests.post(
+                        "https://api.brevo.com/v3/smtp/email",
+                        headers={
+                            "accept": "application/json",
+                            "api-key": "settings.BREVO_API_KEY",
+                            "content-type": "application/json",
+                        },
+                        json=payload,
+                        timeout=15,
+                    )
+                    response.raise_for_status()
+                except (requests.RequestException, AttributeError):
+                    logger.exception("Chatly password reset email failed")
+
+            return redirect("password_reset_done")
+    else:
+        form = PasswordResetForm()
+
+    return render(
+        request,
+        "accounts/password_reset.html",
+        {"form": form},
+    )
+
