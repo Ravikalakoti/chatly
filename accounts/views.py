@@ -308,15 +308,19 @@ def password_reset_request(request):
         form = PasswordResetForm(request.POST)
 
         if form.is_valid():
-            email = form.cleaned_data["email"]
+            email = form.cleaned_data["email"].strip().lower()
+
+            # The limit is counted per typed email whether or not an account exists, so showing
+            # the "limit reached" message never reveals if that email is registered.
+            try:
+                otp.check_limit("password_reset", email)
+            except otp.OtpLimitReached as exc:
+                form.add_error("email", str(exc))
+                return render(request, "accounts/password_reset.html", {"form": form})
+            otp.record_send("password_reset", email)
 
             # Do not reveal whether an account exists.
             for user in form.get_users(email):
-                try:
-                    otp.check_limit("password_reset", user.email)
-                except otp.OtpLimitReached:
-                    logger.warning("Password reset limit reached for user %s", user.pk)
-                    continue  # same response as success, so nobody can probe accounts
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
                 token = default_token_generator.make_token(user)
 
@@ -346,8 +350,6 @@ def password_reset_request(request):
                     user.email, "Reset your Chatly password", html_content, text_content
                 ):
                     logger.error("Chatly password reset email failed for user %s", user.pk)
-                else:
-                    otp.record_send("password_reset", user.email)
 
             return redirect("password_reset_done")
     else:
