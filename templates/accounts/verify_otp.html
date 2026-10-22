@@ -9,20 +9,20 @@
     width: 72px; height: 72px; margin: 0 auto 14px;
     display: grid; place-items: center;
     font-size: 34px; border-radius: 50%;
-    background: linear-gradient(135deg, #ffe3f1, #e9e3ff);
+    background: linear-gradient(135deg, #ffe3f1, #ffe3eb);
     animation: otp-float 3s ease-in-out infinite;
   }
   @keyframes otp-float { 50% { transform: translateY(-6px); } }
 
-  .otp-sub { text-align: center; color: #6b6b80; margin: 6px 0 22px; line-height: 1.5; }
-  .otp-sub strong { color: #2b2b3c; word-break: break-all; }
+  .otp-sub { text-align: center; color: #806b72; margin: 6px 0 22px; line-height: 1.5; }
+  .otp-sub strong { color: #3c2b31; word-break: break-all; }
   .otp-sub a { font-size: .9em; margin-left: 4px; }
 
   .otp-boxes { display: flex; justify-content: center; gap: 10px; margin-bottom: 8px; }
   .otp-box {
     width: 48px; height: 58px; text-align: center;
-    font-size: 26px; font-weight: 700; color: #2b2b3c;
-    border: 2px solid #e4e2f0; border-radius: 14px;
+    font-size: 26px; font-weight: 700; color: #3c2b31;
+    border: 2px solid #f0e2e6; border-radius: 14px;
     background: #fff; outline: none; caret-color: #ff4d9d;
     transition: border-color .15s, box-shadow .15s, transform .15s;
   }
@@ -31,7 +31,7 @@
     box-shadow: 0 0 0 4px rgba(255, 77, 157, .15);
     transform: translateY(-2px);
   }
-  .otp-box.filled { border-color: #b7a8ff; background: #faf8ff; }
+  .otp-box.filled { border-color: #ffa8c3; background: #fff8fa; }
   .otp-boxes.shake { animation: otp-shake .4s; }
   .otp-boxes.shake .otp-box { border-color: #ff5c6c; }
   @keyframes otp-shake {
@@ -43,8 +43,8 @@
   .otp-msg.error { color: #d93a4a; }
   .otp-msg.success { color: #1e9e5a; }
 
-  .otp-timer { text-align: center; color: #6b6b80; font-size: .9rem; margin-top: 18px; }
-  .otp-timer b { color: #2b2b3c; font-variant-numeric: tabular-nums; }
+  .otp-timer { text-align: center; color: #806b72; font-size: .9rem; margin-top: 18px; }
+  .otp-timer b { color: #3c2b31; font-variant-numeric: tabular-nums; }
   .otp-resend { text-align: center; margin-top: 6px; }
   .otp-resend .link-btn[disabled] { opacity: .45; cursor: not-allowed; text-decoration: none; }
 

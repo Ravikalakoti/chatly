@@ -2,40 +2,40 @@
    Chatly — WhatsApp-style look. Light + dark (follows the system setting).
    ========================================================================== */
 :root {
-  --green: #3f00a8;
-  --green-dark: #300080;
-  --green-soft: #e2d1ff;
-  --bg: #f1eff6;
+  --green: #a8002d;
+  --green-dark: #800022;
+  --green-soft: #ffd1dd;
+  --bg: #f6eff1;
   --panel: #ffffff;
-  --panel-alt: #f1eff6;
-  --header: #f1eff6;
-  --text: #171022;
-  --muted: #6f6186;
-  --border: #ebe8f0;
+  --panel-alt: #f6eff1;
+  --header: #f6eff1;
+  --text: #221015;
+  --muted: #86616b;
+  --border: #f0e8ea;
   --bubble-in: #ffffff;
-  --bubble-out: #e2d1ff;
+  --bubble-out: #ffd1dd;
   --chat-bg: #efeae2;
-  --chat-dot: rgba(16, 10, 27, .045);
-  --tick-read: #2f9bd9;
+  --chat-dot: rgba(27, 10, 15, .045);
+  --tick-read: #e11d74;
   --danger: #d93025;
-  --shadow: 0 1px 2px rgba(16, 10, 27, .13);
+  --shadow: 0 1px 2px rgba(27, 10, 15, .13);
   --radius: 10px;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --green-soft: #23005c;
-    --bg: #100a1b;
-    --panel: #171022;
-    --panel-alt: #271e35;
-    --header: #271e35;
-    --text: #ebe8f0;
-    --muted: #8f81a5;
-    --border: #282036;
-    --bubble-in: #271e35;
-    --bubble-out: #23005c;
-    --chat-bg: #100a1b;
+    --green-soft: #5c0018;
+    --bg: #1b0a0f;
+    --panel: #221015;
+    --panel-alt: #351e24;
+    --header: #351e24;
+    --text: #f0e8ea;
+    --muted: #a5818a;
+    --border: #362026;
+    --bubble-in: #351e24;
+    --bubble-out: #5c0018;
+    --chat-bg: #1b0a0f;
     --chat-dot: rgba(255, 255, 255, .035);
     --shadow: 0 1px 2px rgba(0, 0, 0, .4);
     color-scheme: dark;
@@ -76,7 +76,7 @@ h1, h2 { margin: 0 0 .4em; line-height: 1.2; }
   background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
   outline: none; transition: border-color .15s, box-shadow .15s;
 }
-.input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(63, 0, 168, .18); }
+.input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(168, 0, 45, .18); }
 
 .icon-btn {
   display: inline-grid; place-items: center; width: 40px; height: 40px;
@@ -90,11 +90,11 @@ h1, h2 { margin: 0 0 .4em; line-height: 1.2; }
   flex: none; width: 42px; height: 42px; border-radius: 50%;
   display: grid; place-items: center;
   font-weight: 600; font-size: 1.05rem; color: #ffffff; text-decoration: none; user-select: none;
-  background: #74668a;
+  background: #8a666f;
 }
-.av-0 { background: #0aade8; } .av-1 { background: #6410f2; } .av-2 { background: #3d1286; }
-.av-3 { background: #833afc; } .av-4 { background: #d93025; } .av-5 { background: #5509d4; }
-.av-6 { background: #4e0fcb; } .av-7 { background: #5f6368; }
+.av-0 { background: #e85c0a; } .av-1 { background: #f2104c; } .av-2 { background: #861231; }
+.av-3 { background: #fc3a6e; } .av-4 { background: #d93025; } .av-5 { background: #d4093f; }
+.av-6 { background: #cb0f43; } .av-7 { background: #68635f; }
 
 /* ---------- Toasts ---------- */
 .toasts {
@@ -126,7 +126,7 @@ h1, h2 { margin: 0 0 .4em; line-height: 1.2; }
 }
 .auth-card {
   width: min(100%, 420px); padding: 28px 26px 24px;
-  background: var(--panel); border-radius: 16px; box-shadow: 0 10px 30px rgba(16, 10, 27, .18);
+  background: var(--panel); border-radius: 16px; box-shadow: 0 10px 30px rgba(27, 10, 15, .18);
 }
 .auth-card .brand { justify-content: center; margin-bottom: 14px; }
 .auth-card h1 { font-size: 1.4rem; text-align: center; margin-bottom: 1rem; }
@@ -134,7 +134,7 @@ h1, h2 { margin: 0 0 .4em; line-height: 1.2; }
 .field label { display: block; margin-bottom: 5px; font-size: .85rem; font-weight: 600; color: var(--muted); }
 .field.has-error .input { border-color: var(--danger); }
 .field-error { margin: 5px 0 0; font-size: .85rem; color: var(--danger); }
-.form-error { padding: .7em .9em; border-radius: 8px; background: rgba(128, 37, 217, .1); color: var(--danger); font-size: .9rem; }
+.form-error { padding: .7em .9em; border-radius: 8px; background: rgba(217, 37, 80, .1); color: var(--danger); font-size: .9rem; }
 .form-error ul { margin: 0; padding: 0; list-style: none; }
 .auth-switch { margin: 18px 0 0; text-align: center; color: var(--muted); }
 .invite-banner {
@@ -219,7 +219,7 @@ h1, h2 { margin: 0 0 .4em; line-height: 1.2; }
 .conn-banner {
   position: absolute; top: 64px; left: 50%; transform: translateX(-50%); z-index: 3;
   padding: .35em 1em; border-radius: 999px; font-size: .82rem; font-weight: 600;
-  color: #00364a; background: #8fe1ff; box-shadow: var(--shadow);
+  color: #4a1c00; background: #ffb98f; box-shadow: var(--shadow);
 }
 .placeholder .conn-banner { top: 16px; }
 
