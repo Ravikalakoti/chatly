@@ -220,7 +220,7 @@ RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "")
 BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "").strip()
 DEFAULT_FROM_EMAIL = os.environ.get(
     "DEFAULT_FROM_EMAIL",
-    "ravikalakoti16@gmail.com",
+    "",
 )
 
 
