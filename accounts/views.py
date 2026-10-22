@@ -2,6 +2,7 @@ from django.conf import settings
 import requests
 from django.contrib import messages
 from django.http import JsonResponse
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
@@ -14,7 +15,8 @@ from billing.catalog import free_limits, packs
 from billing.limits import quota_rows, reset_label
 from chat.services import connect_users, conversations_for, incoming_requests, recommended_profiles
 
-from .forms import LoginForm, SignupForm, ProfileForm
+from . import otp
+from .forms import LoginForm, SignupForm, ProfileForm, OtpForm
 from .models import User
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.tokens import default_token_generator
@@ -118,8 +120,22 @@ def signup(request, code=None):
 
     form = SignupForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
-        user = form.save()
-        return _finish_auth(request, user) or redirect("home")
+        if form._kind == "email":
+            # Don't create the account yet: it is created only after the emailed code is verified.
+            data = {
+                "display_name": form.cleaned_data["display_name"],
+                "date_of_birth": form.cleaned_data["date_of_birth"].isoformat(),
+                "gender": form.cleaned_data["gender"],
+                "email": form._value,
+                "password": make_password(form.cleaned_data["password1"]),
+            }
+            if otp.start(request, purpose="signup", email=form._value, name=data["display_name"], signup=data):
+                return redirect("verify_otp")
+            form.add_error(None, "We couldn't send the verification email. Please try again in a moment.")
+        else:
+            # Phone-only accounts have no email to verify.
+            user = form.save()
+            return _finish_auth(request, user) or redirect("home")
     return render(request, "accounts/signup.html", {"form": form, "inviter": inviter})
 
 
@@ -131,13 +147,78 @@ def login_view(request):
     next_url = request.POST.get("next") or request.GET.get("next") or ""
     form = LoginForm(request, request.POST or None)
     if request.method == "POST" and form.is_valid():
-        response = _finish_auth(request, form.user)
-        if response:
-            return response
-        if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
-            return redirect(next_url)
-        return redirect("home")
+        user = form.user
+        if user.email:
+            safe_next = next_url if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}) else ""
+            if otp.start(request, purpose="login", email=user.email, name=user.name, user_id=user.pk, next_url=safe_next):
+                return redirect("verify_otp")
+            form.add_error(None, "We couldn't send the login code. Please try again in a moment.")
+        else:
+            response = _finish_auth(request, user)
+            if response:
+                return response
+            if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                return redirect(next_url)
+            return redirect("home")
     return render(request, "accounts/login.html", {"form": form, "inviter": inviter, "next": next_url})
+
+
+def verify_otp(request):
+    """Step 2 of signup/login: enter the 6-digit code that was emailed."""
+    data = otp.pending(request)
+    if request.user.is_authenticated or not data:
+        return redirect("home" if request.user.is_authenticated else "login")
+
+    form = OtpForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        ok, error = otp.check(request, form.cleaned_data["code"])
+        if not ok:
+            form.add_error("code", error)
+            if otp.pending(request) is None:  # expired / locked out
+                messages.error(request, error)
+                return redirect("signup" if data["purpose"] == "signup" else "login")
+        else:
+            if data["purpose"] == "signup":
+                s = data["signup"]
+                if User.objects.filter(email=s["email"]).exists():
+                    otp.clear(request)
+                    messages.error(request, "An account with this email already exists. Try logging in.")
+                    return redirect("login")
+                user = User(
+                    display_name=s["display_name"],
+                    date_of_birth=s["date_of_birth"],
+                    gender=s["gender"],
+                    email=s["email"],
+                    password=s["password"],
+                )
+                user.save()
+            else:
+                user = User.objects.filter(pk=data["user_id"]).first()
+                if user is None:
+                    otp.clear(request)
+                    return redirect("login")
+            otp.clear(request)
+            response = _finish_auth(request, user)
+            if response:
+                return response
+            return redirect(data.get("next") or "home")
+    return render(
+        request,
+        "accounts/verify_otp.html",
+        {"form": form, "email": _mask_email(data["email"]), "purpose": data["purpose"]},
+    )
+
+
+@require_POST
+def resend_otp(request):
+    ok, message = otp.resend(request)
+    (messages.success if ok else messages.error)(request, message)
+    return redirect("verify_otp" if otp.pending(request) else "login")
+
+
+def _mask_email(email):
+    name, _, domain = email.partition("@")
+    return f"{name[:2]}{'*' * max(len(name) - 2, 1)}@{domain}"
 
 
 @require_POST
@@ -220,31 +301,10 @@ def password_reset_request(request):
                     },
                 )
 
-                payload = {
-                    "sender": {
-                        "name": "Chatly",
-                        "email": settings.DEFAULT_FROM_EMAIL,
-                    },
-                    "to": [{"email": user.email}],
-                    "subject": "Reset your Chatly password",
-                    "htmlContent": html_content,
-                    "textContent": text_content,
-                }
-       
-                try:
-                    response = requests.post(
-                        "https://api.brevo.com/v3/smtp/email",
-                        headers={
-                            "accept": "application/json",
-                            "api-key": "settings.BREVO_API_KEY",
-                            "content-type": "application/json",
-                        },
-                        json=payload,
-                        timeout=15,
-                    )
-                    response.raise_for_status()
-                except (requests.RequestException, AttributeError):
-                    logger.exception("Chatly password reset email failed")
+                if not otp.send_brevo_email(
+                    user.email, "Reset your Chatly password", html_content, text_content
+                ):
+                    logger.error("Chatly password reset email failed for user %s", user.pk)
 
             return redirect("password_reset_done")
     else:
@@ -255,4 +315,3 @@ def password_reset_request(request):
         "accounts/password_reset.html",
         {"form": form},
     )
-

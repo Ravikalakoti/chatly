@@ -161,6 +161,31 @@ class LoginForm(StyledForm):
 
 
 
+class OtpForm(StyledForm):
+    code = forms.CharField(
+        label="6-digit code",
+        min_length=6,
+        max_length=6,
+        widget=forms.TextInput(
+            attrs={
+                "inputmode": "numeric",
+                "autocomplete": "one-time-code",
+                "pattern": "[0-9]{6}",
+                "maxlength": "6",
+                "placeholder": "••••••",
+                "autofocus": "autofocus",
+                "class": "input otp-input",
+            }
+        ),
+    )
+
+    def clean_code(self):
+        code = self.cleaned_data["code"].strip()
+        if not code.isdigit():
+            raise forms.ValidationError("Enter the 6-digit code from your email.")
+        return code
+
+
 class ProfileForm(forms.ModelForm):
     """Edit my profile: name, DOB, gender, about line and profile photo."""
 
@@ -248,5 +273,3 @@ class ProfileForm(forms.ModelForm):
             user.save()
 
         return user
-
-

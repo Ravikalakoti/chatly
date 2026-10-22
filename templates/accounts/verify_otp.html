@@ -1,78 +1,38 @@
 {% extends "base.html" %}
 {% load static %}
-
-{% block title %}Verify Email · Chatly{% endblock %}
-{% block body_class %}landing{% endblock %}
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/landing.css' %}">
-{% endblock %}
+{% block title %}Verify your email · Chatly{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/auth.css' %}">{% endblock %}
 
 {% block content %}
-<header class="lp-nav">
-  <a class="lp-brand" href="{% url 'home' %}" aria-label="Chatly home">
-    <span class="lp-logo">💖</span>
-    <span class="lp-brand-name">Chatly</span>
-  </a>
-
-  <div class="lp-actions">
-    <a class="lp-login" href="{% url 'login' %}">Log in</a>
-    <a class="btn btn-primary" href="{% url 'signup' %}">Sign up free</a>
+<main class="auth-card">
+  {% include "accounts/_cartoon.html" %}
+  <div class="brand">
+    <span class="brand-logo">💖</span>
+    <span class="brand-name">Chatly</span>
   </div>
-</header>
 
-<main class="lp lp-wrap">
-  <section class="lp-section">
-    <div class="lp-final">
-      <span class="lp-icon">💌</span>
-      <h2>Verify your email</h2>
-      <p>One little step before you're back with your people.</p>
-      <p>Enter the 6-digit login code we sent to your email address.</p>
+  <h1>Check your email 💌</h1>
+  <p class="auth-switch">We sent a 6-digit code to <strong>{{ email }}</strong>.</p>
 
-      {% if messages %}
-        {% for message in messages %}
-          <p class="lp-note">{{ message }}</p>
-        {% endfor %}
-      {% endif %}
+  {% if messages %}
+    {% for message in messages %}<div class="form-error">{{ message }}</div>{% endfor %}
+  {% endif %}
 
-      <form method="post" class="otp-form">
-        {% csrf_token %}
+  <form method="post" novalidate class="auth-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="form-error">{{ form.non_field_errors }}</div>{% endif %}
+    {% for field in form %}{% include "accounts/_field.html" %}{% endfor %}
+    <button type="submit" class="btn btn-primary btn-block">
+      {% if purpose == "signup" %}Verify &amp; create account ✨{% else %}Verify &amp; log in ✨{% endif %}
+    </button>
+  </form>
 
-        {% if form.non_field_errors %}
-          {% for error in form.non_field_errors %}
-            <p class="lp-note">{{ error }}</p>
-          {% endfor %}
-        {% endif %}
+  <form method="post" action="{% url 'resend_otp' %}" class="auth-switch">
+    {% csrf_token %}
+    Didn't get it? <button type="submit" class="link-btn">Resend code</button>
+  </form>
 
-        {% for field in form %}
-          <div class="otp-field">
-            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-            {{ field }}
-            {% for error in field.errors %}
-              <p class="lp-note">{{ error }}</p>
-            {% endfor %}
-          </div>
-        {% endfor %}
-
-        <button type="submit" class="btn btn-primary btn-lg">
-          Verify &amp; log in
-        </button>
-      </form>
-
-      <p class="lp-note">
-        Didn't receive a code?
-        <a href="{% url 'login' %}">Request a new code</a>
-      </p>
-
-      <p class="lp-fine">
-        🔒 Your login code expires in 5 minutes. Never share it with anyone.
-      </p>
-    </div>
-  </section>
+  <p class="auth-switch">🔒 The code expires in 5 minutes. <a href="{% url 'login' %}">Back to log in</a></p>
 </main>
-
-<footer class="lp-footer lp-wrap">
-  <span><strong>Chatly</strong> 💖 © {% now "Y" %}</span>
-  <span><a href="{% url 'login' %}">Log in</a> ·
-    <a href="{% url 'signup' %}">Sign up</a></span>
-</footer>
 {% endblock %}

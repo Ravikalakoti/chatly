@@ -1,0 +1,10 @@
+Hi {{ name|default:"there" }},
+
+{% if purpose == "signup" %}Welcome to Chatly! Your email verification code is:{% else %}Your Chatly login code is:{% endif %}
+
+    {{ code }}
+
+It expires in {{ minutes }} minutes. Never share it with anyone.
+If you didn't request this, you can safely ignore this email.
+
+— Chatly

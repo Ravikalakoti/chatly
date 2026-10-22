@@ -420,3 +420,23 @@
       transition-duration: .01ms !important;
     }
   }
+
+/* --- OTP verification page --- */
+.otp-input {
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: .5em;
+  padding-left: .5em;
+  font-variant-numeric: tabular-nums;
+}
+.link-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--purple, #8c50ef);
+  cursor: pointer;
+}
+.link-btn:hover { text-decoration: underline; }
