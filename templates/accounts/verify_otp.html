@@ -2,7 +2,63 @@
 {% load static %}
 {% block title %}Verify your email · Chatly{% endblock %}
 {% block body_class %}auth-page{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/auth.css' %}">{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+<style>
+  .otp-icon {
+    width: 72px; height: 72px; margin: 0 auto 14px;
+    display: grid; place-items: center;
+    font-size: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, #ffe3f1, #e9e3ff);
+    animation: otp-float 3s ease-in-out infinite;
+  }
+  @keyframes otp-float { 50% { transform: translateY(-6px); } }
+
+  .otp-sub { text-align: center; color: #6b6b80; margin: 6px 0 22px; line-height: 1.5; }
+  .otp-sub strong { color: #2b2b3c; word-break: break-all; }
+  .otp-sub a { font-size: .9em; margin-left: 4px; }
+
+  .otp-boxes { display: flex; justify-content: center; gap: 10px; margin-bottom: 8px; }
+  .otp-box {
+    width: 48px; height: 58px; text-align: center;
+    font-size: 26px; font-weight: 700; color: #2b2b3c;
+    border: 2px solid #e4e2f0; border-radius: 14px;
+    background: #fff; outline: none; caret-color: #ff4d9d;
+    transition: border-color .15s, box-shadow .15s, transform .15s;
+  }
+  .otp-box:focus {
+    border-color: #ff4d9d;
+    box-shadow: 0 0 0 4px rgba(255, 77, 157, .15);
+    transform: translateY(-2px);
+  }
+  .otp-box.filled { border-color: #b7a8ff; background: #faf8ff; }
+  .otp-boxes.shake { animation: otp-shake .4s; }
+  .otp-boxes.shake .otp-box { border-color: #ff5c6c; }
+  @keyframes otp-shake {
+    20%, 60% { transform: translateX(-8px); }
+    40%, 80% { transform: translateX(8px); }
+  }
+
+  .otp-msg { text-align: center; font-size: .9rem; margin: 8px 0; }
+  .otp-msg.error { color: #d93a4a; }
+  .otp-msg.success { color: #1e9e5a; }
+
+  .otp-timer { text-align: center; color: #6b6b80; font-size: .9rem; margin-top: 18px; }
+  .otp-timer b { color: #2b2b3c; font-variant-numeric: tabular-nums; }
+  .otp-resend { text-align: center; margin-top: 6px; }
+  .otp-resend .link-btn[disabled] { opacity: .45; cursor: not-allowed; text-decoration: none; }
+
+  .btn[disabled] { opacity: .6; cursor: wait; }
+
+  @media (max-width: 380px) {
+    .otp-boxes { gap: 6px; }
+    .otp-box { width: 42px; height: 52px; font-size: 22px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .otp-icon, .otp-boxes.shake { animation: none; }
+  }
+</style>
+{% endblock %}
 
 {% block content %}
 <main class="auth-card">
@@ -12,27 +68,117 @@
     <span class="brand-name">Chatly</span>
   </div>
 
-  <h1>Check your email 💌</h1>
-  <p class="auth-switch">We sent a 6-digit code to <strong>{{ email }}</strong>.</p>
+  <div class="otp-icon" aria-hidden="true">💌</div>
+  <h1 style="text-align:center">Verify your email</h1>
+  <p class="otp-sub">
+    We sent a 6-digit code to<br>
+    <strong>{{ email }}</strong>
+    <a href="{% url 'login' %}">Wrong email?</a>
+  </p>
 
-  {% if messages %}
-    {% for message in messages %}<div class="form-error">{{ message }}</div>{% endfor %}
-  {% endif %}
+  {% for message in messages %}
+    <div class="otp-msg {% if message.tags == 'error' %}error{% else %}success{% endif %}" role="alert">{{ message }}</div>
+  {% endfor %}
 
-  <form method="post" novalidate class="auth-form">
+  <form method="post" novalidate class="auth-form" id="otp-form">
     {% csrf_token %}
-    {% if form.non_field_errors %}<div class="form-error">{{ form.non_field_errors }}</div>{% endif %}
-    {% for field in form %}{% include "accounts/_field.html" %}{% endfor %}
-    <button type="submit" class="btn btn-primary btn-block">
+
+    {# Hidden field(s) from the Django form; JS fills the code in here #}
+    {% for field in form %}{{ field.as_hidden }}{% endfor %}
+
+    <div class="otp-boxes {% if form.errors %}shake{% endif %}" id="otp-boxes" role="group" aria-label="6-digit verification code">
+      {% for i in "123456" %}
+        <input class="otp-box" type="text" inputmode="numeric" pattern="[0-9]*"
+               maxlength="1" autocomplete="{% if forloop.first %}one-time-code{% else %}off{% endif %}"
+               aria-label="Digit {{ forloop.counter }}" {% if forloop.first %}autofocus{% endif %}>
+      {% endfor %}
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="otp-msg error" role="alert">{{ form.non_field_errors|striptags }}</div>
+    {% endif %}
+    {% for field in form %}{% for error in field.errors %}
+      <div class="otp-msg error" role="alert">{{ error }}</div>
+    {% endfor %}{% endfor %}
+
+    <button type="submit" class="btn btn-primary btn-block" id="otp-submit" style="margin-top:14px">
       {% if purpose == "signup" %}Verify &amp; create account ✨{% else %}Verify &amp; log in ✨{% endif %}
     </button>
   </form>
 
-  <form method="post" action="{% url 'resend_otp' %}" class="auth-switch">
+  <p class="otp-timer">Code expires in <b id="expiry">5:00</b></p>
+
+  <form method="post" action="{% url 'resend_otp' %}" class="otp-resend">
     {% csrf_token %}
-    Didn't get it? <button type="submit" class="link-btn">Resend code</button>
+    Didn't get it?
+    <button type="submit" class="link-btn" id="resend-btn" disabled>
+      Resend code <span id="resend-timer">(30s)</span>
+    </button>
   </form>
 
-  <p class="auth-switch">🔒 The code expires in 5 minutes. <a href="{% url 'login' %}">Back to log in</a></p>
+  <p class="auth-switch"><a href="{% url 'login' %}">← Back to log in</a></p>
 </main>
+
+<script>
+(function () {
+  var form = document.getElementById('otp-form');
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('.otp-box'));
+  var hidden = form.querySelector('input[type="hidden"]:not([name="csrfmiddlewaretoken"])');
+  var submitBtn = document.getElementById('otp-submit');
+  var submitted = false;
+
+  function sync() {
+    var code = boxes.map(function (b) { return b.value; }).join('');
+    if (hidden) hidden.value = code;
+    boxes.forEach(function (b) { b.classList.toggle('filled', !!b.value); });
+    if (code.length === 6 && !submitted) { submitted = true; submitBtn.disabled = true; form.submit(); }
+  }
+
+  boxes.forEach(function (box, i) {
+    box.addEventListener('input', function () {
+      box.value = box.value.replace(/\D/g, '').slice(-1);
+      if (box.value && i < boxes.length - 1) boxes[i + 1].focus();
+      sync();
+    });
+    box.addEventListener('keydown', function (e) {
+      if (e.key === 'Backspace' && !box.value && i > 0) { boxes[i - 1].focus(); boxes[i - 1].value = ''; sync(); }
+      if (e.key === 'ArrowLeft' && i > 0) boxes[i - 1].focus();
+      if (e.key === 'ArrowRight' && i < boxes.length - 1) boxes[i + 1].focus();
+    });
+    box.addEventListener('focus', function () { box.select(); });
+    box.addEventListener('paste', function (e) {
+      e.preventDefault();
+      var text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+      text.split('').forEach(function (ch, k) { boxes[k].value = ch; });
+      (boxes[Math.min(text.length, 5)] || boxes[5]).focus();
+      sync();
+    });
+  });
+
+  form.addEventListener('submit', function () { submitBtn.disabled = true; });
+
+  // Shake animation reset
+  var wrap = document.getElementById('otp-boxes');
+  wrap.addEventListener('animationend', function () { wrap.classList.remove('shake'); });
+
+  // Resend cooldown (client-side; also enforce on the server)
+  var resendBtn = document.getElementById('resend-btn');
+  var resendTimer = document.getElementById('resend-timer');
+  var left = 30;
+  var rt = setInterval(function () {
+    left--;
+    if (left <= 0) { clearInterval(rt); resendBtn.disabled = false; resendTimer.textContent = ''; }
+    else resendTimer.textContent = '(' + left + 's)';
+  }, 1000);
+
+  // Expiry countdown (5 min)
+  var exp = document.getElementById('expiry');
+  var secs = 300;
+  var et = setInterval(function () {
+    secs--;
+    if (secs <= 0) { clearInterval(et); exp.textContent = 'expired'; return; }
+    exp.textContent = Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
+  }, 1000);
+})();
+</script>
 {% endblock %}
