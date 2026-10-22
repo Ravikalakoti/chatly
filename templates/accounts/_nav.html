@@ -20,7 +20,7 @@ Usage: {% include "accounts/_nav.html" with active="home" %}   (active: home | d
     <details class="user-menu">
       <summary aria-label="Account menu">{% include "accounts/_avatar.html" with u=request.user %}</summary>
       <div class="user-menu-panel">
-        <div class="um-head"><b>{{ request.user.name }}</b><small>{{ request.user.email|default:request.user.phone }}</small></div>
+        <div class="um-head"><b>{{ request.user.name }}</b><small>{{ request.user.email }}</small></div>
         <a href="{% url 'profile' %}">👤 My profile</a>
         <a href="{% url 'pricing' %}">💳 Buy messages</a>
         <a href="{% url 'dashboard' %}">💬 My chats</a>

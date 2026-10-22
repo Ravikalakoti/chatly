@@ -47,3 +47,27 @@ def parse_identifier(value):
     if phone:
         return "phone", phone
     return None, None
+
+
+_EMAIL_DOMAIN_RE = re.compile(r"^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$")
+
+
+def normalize_email(raw):
+    """
+    Return the cleaned, lower-case email, or None if it isn't a real-looking address.
+    Stricter than Django's validate_email: the domain must have a dot and a letters-only
+    ending (so "me@localhost" or "me@gmail" are rejected), and no spaces are allowed.
+    """
+    value = (raw or "").strip().lower()
+    if not value or len(value) > 254 or " " in value or value.count("@") != 1:
+        return None
+    try:
+        validate_email(value)
+    except ValidationError:
+        return None
+    local, domain = value.split("@")
+    if len(local) > 64 or ".." in local or local.startswith(".") or local.endswith("."):
+        return None
+    if not _EMAIL_DOMAIN_RE.match(domain):
+        return None
+    return value

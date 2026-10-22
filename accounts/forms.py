@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 
-from .utils import parse_identifier
+from .utils import normalize_email
 
 User = get_user_model()
 
@@ -29,13 +29,17 @@ class SignupForm(StyledForm):
         ),
     )
 
-    identifier = forms.CharField(
-        label="Phone number or email",
+    email = forms.CharField(
+        label="Email",
         max_length=254,
-        widget=forms.TextInput(
+        widget=forms.EmailInput(
             attrs={
-                "placeholder": "98765 43210 or you@example.com",
-                "autocomplete": "username",
+                "placeholder": "ravi@example.com",
+                "autocomplete": "email",
+                "inputmode": "email",
+                "autocapitalize": "none",
+                "spellcheck": "false",
+                "required": "required",
             }
         ),
     )
@@ -78,24 +82,14 @@ class SignupForm(StyledForm):
             raise forms.ValidationError("Please enter your name.")
         return name
 
-    def clean_identifier(self):
-        kind, value = parse_identifier(
-            self.cleaned_data["identifier"]
-        )
-
-        if not kind:
-            raise forms.ValidationError(
-                "Enter a valid phone number or email address."
-            )
-
-        if User.objects.filter(**{kind: value}).exists():
-            label = "email" if kind == "email" else "phone number"
-            raise forms.ValidationError(
-                f"An account with this {label} already exists. Try logging in."
-            )
-
-        self._kind, self._value = kind, value
-        return value
+    def clean_email(self):
+        email = normalize_email(self.cleaned_data["email"])
+        if not email:
+            raise forms.ValidationError("Enter a valid email address, like you@example.com.")
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError("An account with this email already exists. Try logging in.")
+        self._kind, self._value = "email", email
+        return email
 
     def clean(self):
         cleaned = super().clean()
@@ -123,7 +117,7 @@ class SignupForm(StyledForm):
             gender=self.cleaned_data["gender"],
         )
 
-        setattr(user, self._kind, self._value)
+        user.email = self._value
         user.set_password(self.cleaned_data["password1"])
 
         if commit:
@@ -133,16 +127,23 @@ class SignupForm(StyledForm):
 
 
 class LoginForm(StyledForm):
-    identifier = forms.CharField(
-        label="Phone number or email",
+    email = forms.CharField(
+        label="Email",
         max_length=254,
-        widget=forms.TextInput(
-            attrs={"placeholder": "98765 43210 or you@example.com", "autocomplete": "username", "inputmode": "email"}
+        widget=forms.EmailInput(
+            attrs={
+                "placeholder": "ravi@example.com",
+                "autocomplete": "email",
+                "inputmode": "email",
+                "autocapitalize": "none",
+                "spellcheck": "false",
+                "required": "required",
+            }
         ),
     )
     password = forms.CharField(
         label="Password",
-        widget=forms.PasswordInput(attrs={"autocomplete": "current-password"}),
+        widget=forms.PasswordInput(attrs={"autocomplete": "current-password", "required": "required"}),
     )
 
     def __init__(self, request=None, *args, **kwargs):
@@ -150,15 +151,20 @@ class LoginForm(StyledForm):
         self.user = None
         super().__init__(*args, **kwargs)
 
+    def clean_email(self):
+        email = normalize_email(self.cleaned_data["email"])
+        if not email:
+            raise forms.ValidationError("Enter a valid email address, like you@example.com.")
+        return email
+
     def clean(self):
         cleaned = super().clean()
-        identifier, password = cleaned.get("identifier"), cleaned.get("password")
-        if identifier and password:
-            self.user = authenticate(self.request, username=identifier.strip(), password=password)
+        email, password = cleaned.get("email"), cleaned.get("password")
+        if email and password:
+            self.user = authenticate(self.request, username=email, password=password)
             if self.user is None:
-                raise forms.ValidationError("Incorrect phone/email or password.")
+                raise forms.ValidationError("Incorrect email or password.")
         return cleaned
-
 
 
 class OtpForm(StyledForm):

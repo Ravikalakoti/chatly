@@ -121,22 +121,17 @@ def signup(request, code=None):
 
     form = SignupForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
-        if form._kind == "email":
-            # Don't create the account yet: it is created only after the emailed code is verified.
-            data = {
-                "display_name": form.cleaned_data["display_name"],
-                "date_of_birth": form.cleaned_data["date_of_birth"].isoformat(),
-                "gender": form.cleaned_data["gender"],
-                "email": form._value,
-                "password": make_password(form.cleaned_data["password1"]),
-            }
-            if otp.start(request, purpose="signup", email=form._value, name=data["display_name"], signup=data):
-                return redirect("verify_otp")
-            form.add_error(None, "We couldn't send the verification email. Please try again in a moment.")
-        else:
-            # Phone-only accounts have no email to verify.
-            user = form.save()
-            return _finish_auth(request, user) or redirect("home")
+        # Don't create the account yet: it is created only after the emailed code is verified.
+        data = {
+            "display_name": form.cleaned_data["display_name"],
+            "date_of_birth": form.cleaned_data["date_of_birth"].isoformat(),
+            "gender": form.cleaned_data["gender"],
+            "email": form.cleaned_data["email"],
+            "password": make_password(form.cleaned_data["password1"]),
+        }
+        if otp.start(request, purpose="signup", email=data["email"], name=data["display_name"], signup=data):
+            return redirect("verify_otp")
+        form.add_error(None, "We couldn't send the verification email. Please try again in a moment.")
     return render(request, "accounts/signup.html", {"form": form, "inviter": inviter})
 
 
@@ -149,18 +144,10 @@ def login_view(request):
     form = LoginForm(request, request.POST or None)
     if request.method == "POST" and form.is_valid():
         user = form.user
-        if user.email:
-            safe_next = next_url if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}) else ""
-            if otp.start(request, purpose="login", email=user.email, name=user.name, user_id=user.pk, next_url=safe_next):
-                return redirect("verify_otp")
-            form.add_error(None, "We couldn't send the login code. Please try again in a moment.")
-        else:
-            response = _finish_auth(request, user)
-            if response:
-                return response
-            if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
-                return redirect(next_url)
-            return redirect("home")
+        safe_next = next_url if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}) else ""
+        if otp.start(request, purpose="login", email=user.email, name=user.name, user_id=user.pk, next_url=safe_next):
+            return redirect("verify_otp")
+        form.add_error(None, "We couldn't send the login code. Please try again in a moment.")
     return render(request, "accounts/login.html", {"form": form, "inviter": inviter, "next": next_url})
 
 

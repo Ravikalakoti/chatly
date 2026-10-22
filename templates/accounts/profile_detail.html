@@ -33,10 +33,6 @@
         </span>
       {% endif %}
 
-      {% if person.phone %}
-        <span>📞 {{ person.phone }}</span>
-      {% endif %}
-
       {% if person.date_of_birth %}
         <span>🎂 Date of Birth: {{ person.date_of_birth|date:"d M Y" }}</span>
       {% endif %}
