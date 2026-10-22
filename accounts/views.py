@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.utils import timezone
 import requests
 from django.contrib import messages
 from django.http import JsonResponse
@@ -166,8 +167,14 @@ def login_view(request):
 def verify_otp(request):
     """Step 2 of signup/login: enter the 6-digit code that was emailed."""
     data = otp.pending(request)
-    if request.user.is_authenticated or not data:
-        return redirect("home" if request.user.is_authenticated else "login")
+    is_verify_email = bool(data) and data["purpose"] == "verify_email"
+    if not data:
+        return redirect("profile" if request.user.is_authenticated else "login")
+    if request.user.is_authenticated and not is_verify_email:
+        return redirect("home")
+    if is_verify_email and (not request.user.is_authenticated or data["user_id"] != request.user.pk):
+        otp.clear(request)
+        return redirect("login")
 
     form = OtpForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
@@ -176,8 +183,15 @@ def verify_otp(request):
             form.add_error("code", error)
             if otp.pending(request) is None:  # expired / locked out
                 messages.error(request, error)
+                if is_verify_email:
+                    return redirect("profile")
                 return redirect("signup" if data["purpose"] == "signup" else "login")
         else:
+            if is_verify_email:
+                otp.clear(request)
+                _mark_email_verified(request.user, data["email"])
+                messages.success(request, "Your email is verified ✅")
+                return redirect("profile")
             if data["purpose"] == "signup":
                 s = data["signup"]
                 if User.objects.filter(email=s["email"]).exists():
@@ -192,11 +206,13 @@ def verify_otp(request):
                     password=s["password"],
                 )
                 user.save()
+                _mark_email_verified(user, s["email"])
             else:
                 user = User.objects.filter(pk=data["user_id"]).first()
                 if user is None:
                     otp.clear(request)
                     return redirect("login")
+                _mark_email_verified(user, data["email"])
             otp.clear(request)
             response = _finish_auth(request, user)
             if response:
@@ -213,12 +229,36 @@ def verify_otp(request):
 def resend_otp(request):
     ok, message = otp.resend(request)
     (messages.success if ok else messages.error)(request, message)
-    return redirect("verify_otp" if otp.pending(request) else "login")
+    return redirect("verify_otp" if otp.pending(request) else ("profile" if request.user.is_authenticated else "login"))
+
+
+def _mark_email_verified(user, email):
+    """The person proved they own `email` by typing the code we sent to it."""
+    if user.email == email and not user.email_verified:
+        User.objects.filter(pk=user.pk).update(email_verified=True, email_verified_at=timezone.now())
+        user.email_verified = True
 
 
 def _mask_email(email):
     name, _, domain = email.partition("@")
     return f"{name[:2]}{'*' * max(len(name) - 2, 1)}@{domain}"
+
+
+@login_required
+@require_POST
+def send_verify_email(request):
+    """Email a 6-digit code to the logged-in person's own email address."""
+    user = request.user
+    if not user.email:
+        messages.error(request, "Add an email to your account first.")
+    elif user.email_verified:
+        messages.info(request, "Your email is already verified.")
+    elif otp.start(request, purpose="verify_email", email=user.email, name=user.name, user_id=user.pk):
+        messages.success(request, f"We sent a 6-digit code to {_mask_email(user.email)}.")
+        return redirect("verify_otp")
+    else:
+        messages.error(request, "We couldn't send the email. Please try again in a moment.")
+    return redirect("profile")
 
 
 @require_POST

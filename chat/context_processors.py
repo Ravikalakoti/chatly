@@ -14,4 +14,7 @@ def nav(request):
         .exclude(sender=user)
         .count()
     )
-    return {"nav_unread": unread}
+    return {
+        "nav_unread": unread,
+        "needs_email_verify": bool(user.email) and not user.email_verified,
+    }

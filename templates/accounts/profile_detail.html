@@ -1,4 +1,3 @@
-```django
 {% extends "base.html" %}
 {% block title %}{{ person.name }} · Chatly{% endblock %}
 {% block body_class %}love-page{% endblock %}
@@ -30,7 +29,9 @@
 
     <div class="contact-list">
       {% if person.email %}
-        <span>✉️ {{ person.email }}</span>
+        <span>✉️ {{ person.email }}
+          {% if person.email_verified %}<span class="verified-badge" title="Email verified">✔ Verified</span>{% endif %}
+        </span>
       {% endif %}
 
       {% if person.phone %}
@@ -54,4 +55,3 @@
   </section>
 </main>
 {% endblock %}
-```

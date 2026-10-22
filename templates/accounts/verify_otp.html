@@ -73,7 +73,7 @@
   <p class="otp-sub">
     We sent a 6-digit code to<br>
     <strong>{{ email }}</strong>
-    <a href="{% url 'login' %}">Wrong email?</a>
+    {% if purpose != "verify_email" %}<a href="{% url 'login' %}">Wrong email?</a>{% endif %}
   </p>
 
   {% for message in messages %}
@@ -102,7 +102,7 @@
     {% endfor %}{% endfor %}
 
     <button type="submit" class="btn btn-primary btn-block" id="otp-submit" style="margin-top:14px">
-      {% if purpose == "signup" %}Verify &amp; create account ✨{% else %}Verify &amp; log in ✨{% endif %}
+      {% if purpose == "signup" %}Verify &amp; create account ✨{% elif purpose == "verify_email" %}Verify my email ✨{% else %}Verify &amp; log in ✨{% endif %}
     </button>
   </form>
 
@@ -116,7 +116,7 @@
     </button>
   </form>
 
-  <p class="auth-switch"><a href="{% url 'login' %}">← Back to log in</a></p>
+  <p class="auth-switch">{% if purpose == "verify_email" %}<a href="{% url 'profile' %}">← Back to my profile</a>{% else %}<a href="{% url 'login' %}">← Back to log in</a>{% endif %}</p>
 </main>
 
 <script>

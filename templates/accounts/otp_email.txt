@@ -1,6 +1,6 @@
 Hi {{ name|default:"there" }},
 
-{% if purpose == "signup" %}Welcome to Chatly! Your email verification code is:{% else %}Your Chatly login code is:{% endif %}
+{% if purpose == "signup" %}Welcome to Chatly! Your email verification code is:{% elif purpose == "verify_email" %}Use this code to verify your email on Chatly:{% else %}Your Chatly login code is:{% endif %}
 
     {{ code }}
 

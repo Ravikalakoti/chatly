@@ -7,7 +7,7 @@
 
 {% block content %}
 {% include "accounts/_nav.html" with active="home" %}
-{% if show_dev_notice %}{% include "accounts/_dev_notice.html" %}{% endif %}
+{% if show_dev_notice %}{% include "accounts/_dev_notice.html" %}{% elif needs_email_verify %}{% include "accounts/_verify_email_popup.html" %}{% endif %}
 
 <main class="love-home">
   <section class="hero">

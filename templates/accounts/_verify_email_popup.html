@@ -1,0 +1,37 @@
+{% comment %}
+Popup for people whose email is not verified yet. Shown at most once per hour
+(tracked in the browser's localStorage). Include only when needs_email_verify.
+{% endcomment %}
+<div class="dn-overlay" id="verify-popup" role="dialog" aria-modal="true" aria-labelledby="vp-title" hidden>
+  <div class="dn-card">
+    <div class="dn-hearts" aria-hidden="true">💌</div>
+    <h2 id="vp-title">Verify your email</h2>
+    <p class="dn-lead">Your email <b>{{ request.user.email }}</b> isn't verified yet. We'll send a 6-digit code to it, and you'll get a ✔ Verified badge on your profile.</p>
+    <form method="post" action="{% url 'send_verify_email' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary btn-lg dn-ok">Verify the email 💗</button>
+    </form>
+    <button type="button" class="btn btn-ghost" id="vp-later" style="margin-top:10px;width:100%">Maybe later</button>
+  </div>
+</div>
+<script>
+  (function () {
+    var KEY = 'chatly_verify_popup_at', HOUR = 60 * 60 * 1000;
+    var box = document.getElementById('verify-popup');
+    if (!box) return;
+    var last = 0;
+    try { last = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) {}
+    if (Date.now() - last < HOUR) { box.remove(); return; }
+    box.hidden = false;
+    try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {}
+    function close() {
+      box.classList.add('closing');
+      setTimeout(function () { box.remove(); }, 250);
+      document.removeEventListener('keydown', onKey);
+    }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    document.getElementById('vp-later').addEventListener('click', close);
+    box.addEventListener('click', function (e) { if (e.target === box) close(); });
+    document.addEventListener('keydown', onKey);
+  })();
+</script>

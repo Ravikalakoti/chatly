@@ -44,6 +44,8 @@ class User(AbstractUser):
 
     # Set once the person has closed the "we're in development" welcome popup.
     seen_dev_notice = models.BooleanField(default=False)
+    email_verified = models.BooleanField(default=False)
+    email_verified_at = models.DateTimeField(null=True, blank=True)
 
     REQUIRED_FIELDS = ["email", "display_name"]
 

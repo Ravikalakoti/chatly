@@ -60,7 +60,7 @@ def _hash(code):
 
 def _send_code(email, name, code, purpose):
     ctx = {"name": name, "code": code, "purpose": purpose, "minutes": OTP_TTL // 60}
-    subject = "Your Chatly verification code" if purpose == "signup" else "Your Chatly login code"
+    subject = "Your Chatly login code" if purpose == "login" else "Your Chatly verification code"
     ctx["subject"] = subject
     html = render_to_string("accounts/otp_email.html", ctx)
     text = render_to_string("accounts/otp_email.txt", ctx)
