@@ -12,6 +12,7 @@ import time
 
 import requests
 from django.conf import settings
+from django.core.cache import cache
 from django.template.loader import render_to_string
 
 logger = logging.getLogger(__name__)
@@ -54,6 +55,50 @@ def send_brevo_email(to_email, subject, html_content, text_content):
     return False
 
 
+class OtpLimitReached(Exception):
+    """Raised when an email address has used up its emails for today."""
+
+
+DAY = 24 * 60 * 60
+_LABELS = {
+    "login": "login codes",
+    "signup": "signup codes",
+    "verify_email": "email verification requests",
+    "password_reset": "password reset emails",
+}
+
+
+def _limit_key(purpose, email):
+    return "emaillimit:" + hashlib.sha256(f"{purpose}:{email.lower()}".encode()).hexdigest()
+
+
+def check_limit(purpose, email):
+    """Raise OtpLimitReached if `email` already got the daily maximum for `purpose`."""
+    limit = settings.OTP_DAILY_LIMITS.get(purpose)
+    if not limit:
+        return
+    entry = cache.get(_limit_key(purpose, email))
+    if entry and entry["count"] >= limit:
+        left = max(int(entry["first"] + DAY - time.time()), 60)
+        hours, minutes = left // 3600, (left % 3600) // 60
+        wait = f"{hours}h {minutes}m" if hours else f"{minutes} min"
+        label = _LABELS.get(purpose, "emails")
+        raise OtpLimitReached(f"You've used all {limit} {label} for today. Try again in {wait}.")
+
+
+def record_send(purpose, email):
+    """Count one successfully sent email."""
+    if not settings.OTP_DAILY_LIMITS.get(purpose):
+        return
+    key = _limit_key(purpose, email)
+    entry = cache.get(key)
+    now = time.time()
+    if not entry or now >= entry["first"] + DAY:
+        entry = {"count": 0, "first": now}
+    entry["count"] += 1
+    cache.set(key, entry, timeout=max(int(entry["first"] + DAY - now), 60))
+
+
 def _hash(code):
     return hmac.new(settings.SECRET_KEY.encode(), code.encode(), hashlib.sha256).hexdigest()
 
@@ -74,9 +119,11 @@ def _send_code(email, name, code, purpose):
 
 def start(request, *, purpose, email, name="", user_id=None, signup=None, next_url=""):
     """Create + email a fresh code and remember it in the session. Returns True if sent."""
+    check_limit(purpose, email)  # may raise OtpLimitReached
     code = f"{secrets.randbelow(10**6):06d}"
     if not _send_code(email, name, code, purpose):
         return False
+    record_send(purpose, email)
     request.session[SESSION_KEY] = {
         "purpose": purpose,
         "email": email,
@@ -108,15 +155,18 @@ def resend(request):
     wait = int(data["resend_at"] - time.time())
     if wait > 0:
         return False, f"Please wait {wait}s before requesting a new code."
-    ok = start(
-        request,
-        purpose=data["purpose"],
-        email=data["email"],
-        name=data["name"],
-        user_id=data["user_id"],
-        signup=data["signup"],
-        next_url=data["next"],
-    )
+    try:
+        ok = start(
+            request,
+            purpose=data["purpose"],
+            email=data["email"],
+            name=data["name"],
+            user_id=data["user_id"],
+            signup=data["signup"],
+            next_url=data["next"],
+        )
+    except OtpLimitReached as exc:
+        return False, str(exc)
     return (True, "A new code is on its way.") if ok else (False, "We couldn't send the email. Please try again.")
 
 

@@ -119,18 +119,31 @@ if REDIS_URL:
             "CONFIG": {"hosts": [REDIS_URL]},
         }
     }
+    # Shared cache so the email limits hold across several server processes.
+    CACHES = {"default": {"BACKEND": "django.core.cache.backends.redis.RedisCache", "LOCATION": REDIS_URL}}
 else:
     CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
+    CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 
 # --- Auth -------------------------------------------------------------------
 AUTH_USER_MODEL = "accounts.User"
 AUTHENTICATION_BACKENDS = [
-    "accounts.backends.IdentifierBackend",  # log in with phone or email
+    "accounts.backends.IdentifierBackend",  # log in with email + password
     "django.contrib.auth.backends.ModelBackend",  # keeps /admin username login working
 ]
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"  # the public landing page
+
+# --- Email-code limits (one place for the whole site) ------------------------
+# Max emails of each kind that ONE email address can trigger per rolling 24 hours.
+# Resending a code counts too. Change a number here (or with the env var) and restart.
+OTP_DAILY_LIMITS = {
+    "login": env_int("LIMIT_LOGIN_CODES_PER_DAY", 5),            # login codes
+    "verify_email": env_int("LIMIT_VERIFY_EMAIL_PER_DAY", 2),    # "Verify the email" button
+    "signup": env_int("LIMIT_SIGNUP_CODES_PER_DAY", 5),          # signup codes
+    "password_reset": env_int("LIMIT_PASSWORD_RESET_PER_DAY", 2),  # forgot-password emails
+}
 
 # Phone numbers typed without a country code get this one (India = 91).
 DEFAULT_COUNTRY_CODE = os.environ.get("DEFAULT_COUNTRY_CODE", "91")

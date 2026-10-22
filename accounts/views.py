@@ -129,9 +129,12 @@ def signup(request, code=None):
             "email": form.cleaned_data["email"],
             "password": make_password(form.cleaned_data["password1"]),
         }
-        if otp.start(request, purpose="signup", email=data["email"], name=data["display_name"], signup=data):
-            return redirect("verify_otp")
-        form.add_error(None, "We couldn't send the verification email. Please try again in a moment.")
+        try:
+            if otp.start(request, purpose="signup", email=data["email"], name=data["display_name"], signup=data):
+                return redirect("verify_otp")
+            form.add_error(None, "We couldn't send the verification email. Please try again in a moment.")
+        except otp.OtpLimitReached as exc:
+            form.add_error("email", str(exc))
     return render(request, "accounts/signup.html", {"form": form, "inviter": inviter})
 
 
@@ -145,9 +148,12 @@ def login_view(request):
     if request.method == "POST" and form.is_valid():
         user = form.user
         safe_next = next_url if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}) else ""
-        if otp.start(request, purpose="login", email=user.email, name=user.name, user_id=user.pk, next_url=safe_next):
-            return redirect("verify_otp")
-        form.add_error(None, "We couldn't send the login code. Please try again in a moment.")
+        try:
+            if otp.start(request, purpose="login", email=user.email, name=user.name, user_id=user.pk, next_url=safe_next):
+                return redirect("verify_otp")
+            form.add_error(None, "We couldn't send the login code. Please try again in a moment.")
+        except otp.OtpLimitReached as exc:
+            form.add_error(None, str(exc))
     return render(request, "accounts/login.html", {"form": form, "inviter": inviter, "next": next_url})
 
 
@@ -240,11 +246,14 @@ def send_verify_email(request):
         messages.error(request, "Add an email to your account first.")
     elif user.email_verified:
         messages.info(request, "Your email is already verified.")
-    elif otp.start(request, purpose="verify_email", email=user.email, name=user.name, user_id=user.pk):
-        messages.success(request, f"We sent a 6-digit code to {_mask_email(user.email)}.")
-        return redirect("verify_otp")
     else:
-        messages.error(request, "We couldn't send the email. Please try again in a moment.")
+        try:
+            if otp.start(request, purpose="verify_email", email=user.email, name=user.name, user_id=user.pk):
+                messages.success(request, f"We sent a 6-digit code to {_mask_email(user.email)}.")
+                return redirect("verify_otp")
+            messages.error(request, "We couldn't send the email. Please try again in a moment.")
+        except otp.OtpLimitReached as exc:
+            messages.error(request, str(exc))
     return redirect("profile")
 
 
@@ -303,6 +312,11 @@ def password_reset_request(request):
 
             # Do not reveal whether an account exists.
             for user in form.get_users(email):
+                try:
+                    otp.check_limit("password_reset", user.email)
+                except otp.OtpLimitReached:
+                    logger.warning("Password reset limit reached for user %s", user.pk)
+                    continue  # same response as success, so nobody can probe accounts
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
                 token = default_token_generator.make_token(user)
 
@@ -332,6 +346,8 @@ def password_reset_request(request):
                     user.email, "Reset your Chatly password", html_content, text_content
                 ):
                     logger.error("Chatly password reset email failed for user %s", user.pk)
+                else:
+                    otp.record_send("password_reset", user.email)
 
             return redirect("password_reset_done")
     else:
