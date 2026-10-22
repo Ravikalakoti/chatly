@@ -12,7 +12,7 @@
 <main class="love-home">
   <section class="hero">
     <div class="hero-heart">💖</div>
-    <h1>Hi {{ request.user.name }}, welcome back</h1>
+    <h1>Hi {{ request.user.name }} {% if request.user.email_verified %}{% include "accounts/_verified_tick.html" %}{% endif %}, welcome back</h1>
     <p class="lead">Every chat is a little love letter. Talk to the people who matter, send a sweet voice note, share a photo, and keep every moment close.</p>
     <div id="love-quote" class="love-quote">You make every ordinary day feel special 💕</div>
   </section>

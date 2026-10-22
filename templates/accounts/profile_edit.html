@@ -21,6 +21,8 @@
       </span>
     </div>
 
+    <h1 class="profile-name">{{ request.user.name }} {% if request.user.email_verified %}{% include "accounts/_verified_tick.html" %}{% endif %}</h1>
+
     <div style="text-align:center; margin-top: 14px;">
       <label for="avatar-input" class="btn btn-ghost">📷 Choose photo</label>
       {{ form.avatar }}
@@ -48,7 +50,7 @@
     <div class="email-row">
       <span class="email-value">{{ request.user.email }}</span>
       {% if request.user.email_verified %}
-        <span class="verified-badge" title="Email verified">✔ Verified</span>
+        <span class="verified-text">Email verified</span>
       {% else %}
         <span class="unverified-badge">Not verified</span>
         <button class="btn btn-primary btn-sm" type="submit" form="verify-email-form">Verify the email</button>

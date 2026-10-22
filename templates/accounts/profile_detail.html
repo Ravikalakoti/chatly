@@ -21,7 +21,7 @@
       {% include "accounts/_avatar.html" with u=person size="xxl" %}
     </div>
 
-    <h1>{{ person.name }}</h1>
+    <h1>{{ person.name }} {% if person.email_verified %}{% include "accounts/_verified_tick.html" %}{% endif %}</h1>
 
     <div class="about-bubble">
       {{ person.about|default:"Hey there! I am using Chatly 💕" }}
@@ -30,7 +30,6 @@
     <div class="contact-list">
       {% if person.email %}
         <span>✉️ {{ person.email }}
-          {% if person.email_verified %}<span class="verified-badge" title="Email verified">✔ Verified</span>{% endif %}
         </span>
       {% endif %}
 
